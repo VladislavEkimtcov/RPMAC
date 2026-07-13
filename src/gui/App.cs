@@ -710,9 +710,11 @@ namespace RPMac {
             var labels4 = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
             labels4.Children.Add(new TextBlock { Text = "On-screen overlay", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
             labels4.Children.Add(new TextBlock { Text = "Show fan RPM and temperatures on top of everything (top-right corner).", Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
+            StackPanel overlayOptions = null;
             var toggle4 = BuildToggle(Settings.Overlay, delegate (bool on) {
                 Settings.Overlay = on; Settings.Save();
                 if (on) ShowOverlay(); else HideOverlay();
+                if (overlayOptions != null) overlayOptions.Visibility = on ? Visibility.Visible : Visibility.Collapsed;
                 status.Text = on ? "Overlay: on" : "Overlay: off";
             });
             DockPanel.SetDock(toggle4, Dock.Right);
@@ -720,15 +722,33 @@ namespace RPMac {
             row4.Children.Add(labels4);
             col.Children.Add(row4);
 
-            BuildOverlayOptions(col);
+            overlayOptions = BuildOverlayOptions(col);
+            overlayOptions.Visibility = Settings.Overlay ? Visibility.Visible : Visibility.Collapsed;
             BuildThemeRow(col);
 
             parent.Children.Add(Card(col));
         }
 
-        void BuildOverlayOptions(Panel col) {
+        // Human labels for the 8 overlay anchor points (corners + edge-centers).
+        static readonly string[][] OVERLAY_POSITIONS = new string[][] {
+            new string[]{ "topleft",      "Top Left" },
+            new string[]{ "topcenter",    "Top Center" },
+            new string[]{ "topright",     "Top Right" },
+            new string[]{ "middleleft",   "Middle Left" },
+            new string[]{ "middleright",  "Middle Right" },
+            new string[]{ "bottomleft",   "Bottom Left" },
+            new string[]{ "bottomcenter", "Bottom Center" },
+            new string[]{ "bottomright",  "Bottom Right" },
+        };
+
+        // Builds all overlay-specific settings (layout, position, opacity, item selection)
+        // into their own panel and returns it, so the caller can show/hide it as a group
+        // depending on whether the overlay is enabled.
+        StackPanel BuildOverlayOptions(Panel col) {
+            var opts = new StackPanel();
+
             // --- Orientacion ---
-            col.Children.Add(new TextBlock { Text = "Overlay layout", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 16, 0, 8) });
+            opts.Children.Add(new TextBlock { Text = "Overlay layout", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 16, 0, 8) });
             var orient = new WrapPanel { Orientation = Orientation.Horizontal };
             var vtb = new TextBlock { Text = "Vertical", FontSize = 13, FontWeight = FontWeights.SemiBold };
             var htb = new TextBlock { Text = "Horizontal", FontSize = 13, FontWeight = FontWeights.SemiBold };
@@ -743,15 +763,55 @@ namespace RPMac {
             hbd.MouseLeftButtonUp += delegate { Settings.OverlayHorizontal = true; Settings.Save(); if (overlay != null) { overlay.SetHorizontal(true); overlay.Reposition(); } paintOrient(); };
             orient.Children.Add(vbd); orient.Children.Add(hbd);
             paintOrient();
-            col.Children.Add(orient);
+            opts.Children.Add(orient);
+
+            // --- Posicion en pantalla (8 anclas: esquinas + centros de borde) ---
+            opts.Children.Add(new TextBlock { Text = "Overlay position", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 14, 0, 8) });
+            var posWrap = new WrapPanel { Orientation = Orientation.Horizontal };
+            var posChips = new Dictionary<string, Border>();
+            var posLabels = new Dictionary<string, TextBlock>();
+            Action paintPos = delegate {
+                foreach (var kv in posChips) {
+                    bool sel = kv.Key == Settings.OverlayPosition;
+                    kv.Value.Background = sel ? ACCENT : CHIP;
+                    posLabels[kv.Key].Foreground = sel ? Brushes.White : TXT;
+                }
+            };
+            foreach (var p in OVERLAY_POSITIONS) {
+                string key = p[0]; string label = p[1];
+                var tb = new TextBlock { Text = label, FontSize = 13, FontWeight = FontWeights.SemiBold };
+                var bd = new Border { CornerRadius = new CornerRadius(9), Padding = new Thickness(13, 7, 13, 7), Margin = new Thickness(0, 0, 8, 8), Cursor = Cursors.Hand, Child = tb };
+                bd.MouseLeftButtonUp += delegate {
+                    Settings.OverlayPosition = key; Settings.Save();
+                    if (overlay != null) overlay.SetPosition(key);
+                    paintPos();
+                };
+                posChips[key] = bd; posLabels[key] = tb;
+                posWrap.Children.Add(bd);
+            }
+            paintPos();
+            opts.Children.Add(posWrap);
+
+            // --- Opacidad ---
+            opts.Children.Add(new TextBlock { Text = "Overlay opacity", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 14, 0, 8) });
+            var opRow = new StackPanel { Orientation = Orientation.Horizontal };
+            var opSlider = new Slider { Minimum = 0.2, Maximum = 1.0, Value = Settings.OverlayOpacity, Width = 250, VerticalAlignment = VerticalAlignment.Center };
+            var opVal = new TextBlock { Text = ((int)Math.Round(Settings.OverlayOpacity * 100)) + "%", Foreground = TXT, Width = 60, Margin = new Thickness(12, 0, 0, 0), FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
+            opSlider.ValueChanged += delegate {
+                opVal.Text = ((int)Math.Round(opSlider.Value * 100)) + "%";
+                Settings.OverlayOpacity = opSlider.Value; Settings.Save();
+                if (overlay != null) overlay.SetOpacity(opSlider.Value);
+            };
+            opRow.Children.Add(opSlider); opRow.Children.Add(opVal);
+            opts.Children.Add(opRow);
 
             // --- Que mostrar (ventiladores + sensores presentes) ---
             var items = new List<string[]>();
             foreach (var f in fans) items.Add(new[] { "fan" + f.Index, "Fan " + f.Index });
             foreach (var c in CURATED) if (curatedLabels.ContainsKey(c[0])) items.Add(new[] { c[0], c[1] });
-            if (items.Count == 0) return;
+            if (items.Count == 0) { col.Children.Add(opts); return opts; }
 
-            col.Children.Add(new TextBlock { Text = "Show in overlay", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 14, 0, 8) });
+            opts.Children.Add(new TextBlock { Text = "Show in overlay", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 14, 0, 8) });
             var wrap = new WrapPanel { Orientation = Orientation.Horizontal };
             foreach (var it in items) {
                 string key = it[0]; string label = it[1];
@@ -766,7 +826,10 @@ namespace RPMac {
                 paint();
                 wrap.Children.Add(bd);
             }
-            col.Children.Add(wrap);
+            opts.Children.Add(wrap);
+
+            col.Children.Add(opts);
+            return opts;
         }
 
         // ---- System tray ----
@@ -1364,6 +1427,8 @@ namespace RPMac {
         void ShowOverlay() {
             if (overlay == null) overlay = new Overlay();
             overlay.Horizontal = Settings.OverlayHorizontal;
+            overlay.Position = Settings.OverlayPosition;
+            overlay.SetOpacity(Settings.OverlayOpacity);
             overlay.Show();
             RefreshOverlayNow();
             overlay.Reposition();
@@ -1427,6 +1492,7 @@ namespace RPMac {
         }
 
         public bool Horizontal = false;
+        public string Position = "topright";
         List<string[]> lastRows = new List<string[]>();
         readonly Border card;
 
@@ -1472,10 +1538,28 @@ namespace RPMac {
 
         public void SetHorizontal(bool h) { Horizontal = h; Render(lastRows); }
 
+        // Live-updates the whole overlay's translucency (background, border, text and shadow
+        // fade together), independent of the fixed tint baked into the card's brush.
+        public void SetOpacity(double o) { Opacity = o; }
+
+        // Places the overlay at one of 8 anchor points on the work area: the 4 corners plus
+        // the 4 edge-centers (top/bottom/left/right center). Falls back to top-right.
+        public void SetPosition(string p) { Position = p; Reposition(); }
+
         public void Reposition() {
-            var wa = SystemParameters.WorkArea;          // siempre arriba a la derecha
-            Left = wa.Right - ActualWidth + 2;
-            Top = wa.Top + 2;
+            var wa = SystemParameters.WorkArea;
+            double x, y;
+            switch (Position) {
+                case "topleft":      x = wa.Left - 2;                              y = wa.Top + 2; break;
+                case "topcenter":    x = wa.Left + (wa.Width - ActualWidth) / 2;   y = wa.Top + 2; break;
+                case "middleleft":   x = wa.Left - 2;                              y = wa.Top + (wa.Height - ActualHeight) / 2; break;
+                case "middleright":  x = wa.Right - ActualWidth + 2;               y = wa.Top + (wa.Height - ActualHeight) / 2; break;
+                case "bottomleft":   x = wa.Left - 2;                              y = wa.Bottom - ActualHeight - 2; break;
+                case "bottomcenter": x = wa.Left + (wa.Width - ActualWidth) / 2;   y = wa.Bottom - ActualHeight - 2; break;
+                case "bottomright":  x = wa.Right - ActualWidth + 2;               y = wa.Bottom - ActualHeight - 2; break;
+                default:             x = wa.Right - ActualWidth + 2;               y = wa.Top + 2; break; // topright
+            }
+            Left = x; Top = y;
         }
 
         TextBlock Label(string t, double size) { return new TextBlock { Text = t, Foreground = MainWindow.SUB, FontSize = size, Effect = Shadow(), VerticalAlignment = VerticalAlignment.Center }; }
@@ -1533,6 +1617,8 @@ namespace RPMac {
         public static bool Fahrenheit = false;
         public static bool Overlay = false;
         public static bool OverlayHorizontal = false;
+        public static string OverlayPosition = "topright"; // one of the 8 anchor keys (see OVERLAY_POSITIONS)
+        public static double OverlayOpacity = 1.0;          // 0.2 - 1.0
         public static HashSet<string> OverlayItems = null; // null = mostrar todo
         public static string Theme = "dark";
         public static string TrayMode = "icon";  // "icon", "none", "highest", or a sensor key
@@ -1546,6 +1632,12 @@ namespace RPMac {
                     else if (s.Length >= 2 && s[0] == "tempf") Fahrenheit = (s[1] == "1");
                     else if (s.Length >= 2 && s[0] == "overlay") Overlay = (s[1] == "1");
                     else if (s.Length >= 2 && s[0] == "ovorient") OverlayHorizontal = (s[1] == "h");
+                    else if (s.Length >= 2 && s[0] == "ovpos") OverlayPosition = s[1];
+                    else if (s.Length >= 2 && s[0] == "ovopacity") {
+                        double o;
+                        if (double.TryParse(s[1], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out o))
+                            OverlayOpacity = o;
+                    }
                     else if (s.Length >= 2 && s[0] == "ovsel") OverlayItems = new HashSet<string>(s[1].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
                     else if (s.Length >= 2 && s[0] == "theme") Theme = s[1];
                     else if (s.Length >= 2 && s[0] == "traymode") TrayMode = s[1];
@@ -1581,6 +1673,8 @@ namespace RPMac {
                 lines.Add("tempf|" + (Fahrenheit ? "1" : "0"));
                 lines.Add("overlay|" + (Overlay ? "1" : "0"));
                 lines.Add("ovorient|" + (OverlayHorizontal ? "h" : "v"));
+                lines.Add("ovpos|" + OverlayPosition);
+                lines.Add("ovopacity|" + OverlayOpacity.ToString(System.Globalization.CultureInfo.InvariantCulture));
                 if (OverlayItems != null) lines.Add("ovsel|" + string.Join(",", new List<string>(OverlayItems).ToArray()));
                 lines.Add("theme|" + Theme);
                 lines.Add("traymode|" + TrayMode);
