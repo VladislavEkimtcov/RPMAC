@@ -1004,6 +1004,58 @@ namespace RPMac {
             }
         }
 
+        // Build the tray icon's hover tooltip: app name, every fan's RPM, then every visible
+        // curated temperature sorted highest to lowest — i.e. the same info as the overlay.
+        void UpdateTrayTooltip(List<FanInfo> infos, Dictionary<string, double> curated) {
+            if (tray == null) return;
+            try {
+                var lines = new List<string> { "RPMac" };
+
+                foreach (var fi in infos) {
+                    if (double.IsNaN(fi.Actual)) continue;
+                    string prefix = infos.Count > 1 ? "Fan " + fi.Index + ": " : "";
+                    string pct = "";
+                    if (fi.Index < fans.Count) {
+                        double max = fans[fi.Index].Max;
+                        if (max > 0) {
+                            double frac = fi.Actual / max;
+                            if (frac < 0) frac = 0; if (frac > 1) frac = 1;
+                            pct = " (" + ((int)Math.Round(frac * 100)) + "%)";
+                        }
+                    }
+                    lines.Add(prefix + ((int)fi.Actual) + " rpm" + pct);
+                }
+
+                var temps = new List<KeyValuePair<string, double>>();
+                foreach (var c in CURATED) {
+                    double v;
+                    if (curatedLabels.ContainsKey(c[0]) && curated.TryGetValue(c[0], out v) && !double.IsNaN(v))
+                        temps.Add(new KeyValuePair<string, double>(c[1], v));
+                }
+                temps.Sort(delegate (KeyValuePair<string, double> a, KeyValuePair<string, double> b) {
+                    return b.Value.CompareTo(a.Value); // highest first
+                });
+                foreach (var t in temps) lines.Add(t.Key + " " + FormatTemp(t.Value));
+
+                SetTrayText(string.Join("\n", lines.ToArray()));
+            } catch { }
+        }
+
+        // NotifyIcon.Text has a hard length cap (63 chars on old .NET/legacy quirks, 127 on
+        // newer ones) and throws if exceeded — so trim defensively and fall back gracefully
+        // instead of letting a long sensor list crash the refresh loop.
+        void SetTrayText(string text) {
+            try {
+                if (text.Length > 127) text = text.Substring(0, 124) + "...";
+                tray.Text = text;
+            } catch {
+                try {
+                    if (text.Length > 63) text = text.Substring(0, 60) + "...";
+                    tray.Text = text;
+                } catch { }
+            }
+        }
+
         // Aplica al abrir la última configuración guardada (si es seguro escribir)
         void ApplySaved() {
             if (!Smc.WritesAllowed) return;
@@ -1275,6 +1327,7 @@ namespace RPMac {
                             if (all != null) UpdateTemps(all, allLabels);
                             UpdateOverlay(infos, curated);
                             ApplyTrayMode(curated);
+                            UpdateTrayTooltip(infos, curated);
                             status.Text = "Driver OK · updated " + DateTime.Now.ToString("HH:mm:ss");
                         });
                     } catch { }
