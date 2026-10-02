@@ -1,3 +1,27 @@
+## RPMac v1.10.0
+
+**The other app capable of controlling fans on Intel Macs in Windows — for free.**
+
+### RPMac now speaks Italian
+
+Settings has a new **Language** selector: **English** or **Italiano**. The whole interface is translated — the four pages, fan modes, the curve editor, presets, the tray menu, the overlay, sensor names and the emergency messages. Picking a language restarts RPMac to apply it, and the choice is remembered. English stays the default, so nothing changes unless you switch. Contributed by @Michel-IT.
+
+The translations live in a single source file with no extra dependencies, so another language is one more dictionary and one more button. If you'd like RPMac in yours, pull requests are welcome.
+
+### New
+
+- **An installer script.** `installer/rpmac-setup.iss` builds an [Inno Setup](https://jrsoftware.org/isinfo.php) installer that starts RPMac with Windows and adds `smccore.exe` to PATH, for those who'd rather have it installed than portable. Contributed by @matthewyang204.
+
+### Download
+Download `RPMac-v1.10.0-windows.zip` below, unzip it, and run **`RPMac.exe` as administrator**.
+Keep `RPMac.exe`, `RPMac.exe.config`, `smccore.exe` and `inpout32.dll` together in the same folder.
+
+> **If Windows blocks it:** RPMac isn't code-signed, so Windows doesn't recognise it yet. On **SmartScreen** choose *More info → Run anyway*; if **Smart App Control** blocks it the app just won't start, so either turn Smart App Control off in *Windows Security → App & browser control*, or build RPMac yourself from source. Some antivirus tools also flag the bundled **InpOut32** driver, which is what talks to the SMC — normal for any fan-control utility. The full source is in this repo.
+
+Read-only and safe on non-Apple hardware. License: GPL-2.0-only.
+
+---
+
 ## RPMac v1.9.0
 
 **The other app capable of controlling fans on Intel Macs in Windows — for free.**

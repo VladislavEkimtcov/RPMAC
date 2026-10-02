@@ -16,6 +16,7 @@ RPMac - Quick start
    (also from the tray icon: right-click -> Presets).
 
 The sidebar has four pages: Fans, Sensors, Presets and Settings.
+RPMac is available in English and Italian: Settings -> Language.
 
 T2 Macs (2018-2020)
 -------------------
