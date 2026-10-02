@@ -70,6 +70,7 @@ Designed as a lightweight, modern alternative to paid tools, RPMac includes **ha
 - On-screen overlay (FRAPS-style): always-on-top, top-right corner, vertical or horizontal, with selectable fans/sensors
 - Live temperature on the tray icon (highest sensor or a specific one) — or just the app icon, or nothing
 - Themes: Dark / Light / Nature / Japan
+- **Interface languages**: English, Italian
 - Temperatures in °C or °F
 - Start with Windows + start minimized to tray
 - Remembers your settings and re-applies them (including after sleep/resume)
@@ -213,7 +214,7 @@ csc /noconfig /target:winexe /platform:x86 ^
     /reference:WPF\WindowsBase.dll ^
     /reference:WPF\PresentationCore.dll ^
     /reference:WPF\PresentationFramework.dll ^
-    src\gui\Smc.cs src\gui\App.cs
+    src\gui\Smc.cs src\gui\I18n.cs src\gui\App.cs
 ```
 `csc.exe` lives in `%WINDIR%\Microsoft.NET\Framework\v4.0.30319`. Keep `inpout32.dll` and
 `RPMac.exe.config` next to `RPMac.exe` when you run it. (`System.Windows.Forms` and

@@ -30,7 +30,7 @@ echo Compiling RPMac...
   /reference:"%FW%\WPF\PresentationFramework.dll" ^
   /reference:"%FW%\System.Windows.Forms.dll" ^
   /reference:"%FW%\System.Drawing.dll" ^
-  "%ROOT%src\gui\Smc.cs" "%ROOT%src\gui\App.cs"
+  "%ROOT%src\gui\Smc.cs" "%ROOT%src\gui\I18n.cs" "%ROOT%src\gui\App.cs"
 
 if errorlevel 1 (
   echo.

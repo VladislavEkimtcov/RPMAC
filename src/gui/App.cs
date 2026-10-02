@@ -374,6 +374,7 @@ namespace RPMac {
             // deliberately kept separate from the mutable BG/CARD/TXT/... brushes used directly in code.
             try { Resources.MergedDictionaries.Add((ResourceDictionary)XamlReader.Parse(STYLES)); } catch { }
             Settings.Load();
+            I18n.SetLanguage(Settings.Language);
             RebuildSensorList();   // a�ade a la lista los sensores que el usuario haya nombrado
             ApplyTheme(Settings.Theme); // colorea la paleta (y crea los recursos de tema) antes de construir la UI
 
@@ -395,7 +396,7 @@ namespace RPMac {
             // Barra de estado con punto indicador (verde = OK, ámbar = solo lectura)
             var statusRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(18, 6, 18, 6) };
             statusDot = new Border { Width = 7, Height = 7, CornerRadius = new CornerRadius(3.5), Background = SUB, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
-            status = new TextBlock { Text = "Starting…", FontSize = 11, Foreground = SUB, VerticalAlignment = VerticalAlignment.Center };
+            status = new TextBlock { Text = I18n.T("Starting…"), FontSize = 11, Foreground = SUB, VerticalAlignment = VerticalAlignment.Center };
             statusRow.Children.Add(statusDot);
             statusRow.Children.Add(status);
             var statusBar = new Border { Background = BAR, BorderBrush = BORDER, BorderThickness = new Thickness(0, 1, 0, 0), Child = statusRow };
@@ -429,13 +430,13 @@ namespace RPMac {
             fansPage.Children.Add(fansGrid);
 
             if (!Smc.IsInpOutDriverOpen())
-                stack.Children.Add(Card(new TextBlock { Text = "Couldn't open the I/O driver (InpOut).\nRun the app as administrator.", Foreground = RED, TextWrapping = TextWrapping.Wrap }));
+                stack.Children.Add(Card(new TextBlock { Text = I18n.T("Couldn't open the I/O driver (InpOut).\nRun the app as administrator."), Foreground = RED, TextWrapping = TextWrapping.Wrap }));
 
             // SALVAGUARDA: validar hardware Apple + coherencia del SMC antes de permitir escribir
             Smc.Validate();
             if (!Smc.WritesAllowed) {
                 var warn = new StackPanel();
-                warn.Children.Add(new TextBlock { Text = "⚠  Read-only mode", FontSize = 14, FontWeight = FontWeights.Bold, Foreground = WARN });
+                warn.Children.Add(new TextBlock { Text = I18n.T("⚠  Read-only mode"), FontSize = 14, FontWeight = FontWeights.Bold, Foreground = WARN });
                 warn.Children.Add(new TextBlock { Text = Smc.SafetyReason, Foreground = TXT, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) });
                 stack.Children.Add(Card(warn));
             }
@@ -588,15 +589,15 @@ namespace RPMac {
             var panel = new StackPanel { Background = BAR };
             var wrap = new Border { Background = BAR, BorderBrush = BORDER, BorderThickness = new Thickness(0, 0, 1, 0), Child = panel };
 
-            panel.Children.Add(NavButton("fans", "Fans", null));
-            panel.Children.Add(NavButton("sensors", "Sensors", new[] {
+            panel.Children.Add(NavButton("fans", I18n.T("Fans"), null));
+            panel.Children.Add(NavButton("sensors", I18n.T("Sensors"), new[] {
                 "M14.5,13.6 V5.5 a2.5,2.5 0 0 0 -5,0 V13.6 a4.5,4.5 0 1 0 5,0 Z",
                 "M12,9.5 V15.2"
             }));
-            panel.Children.Add(NavButton("profiles", "Presets", new[] {
+            panel.Children.Add(NavButton("profiles", I18n.T("Presets"), new[] {
                 "M7,3.5 h10 a1,1 0 0 1 1,1 V20.5 l-6,-4 -6,4 V4.5 a1,1 0 0 1 1,-1 Z"
             }));
-            panel.Children.Add(NavButton("settings", "Settings", new[] {
+            panel.Children.Add(NavButton("settings", I18n.T("Settings"), new[] {
                 "M3.5,7 h9.5 M17.5,7 h3 M3.5,12 h3.5 M11.5,12 h9 M3.5,17 h11 M19,17 h1.5",
                 "M13,7 a2.25,2.25 0 1 0 4.5,0 a2.25,2.25 0 1 0 -4.5,0",
                 "M7,12 a2.25,2.25 0 1 0 4.5,0 a2.25,2.25 0 1 0 -4.5,0",
@@ -660,7 +661,7 @@ namespace RPMac {
 
         bool Guard() {
             if (Smc.WritesAllowed) return true;
-            status.Text = "Read-only on this hardware — " + Smc.SafetyReason;
+            status.Text = I18n.T("Read-only on this hardware — ") + Smc.SafetyReason;
             return false;
         }
 
@@ -830,7 +831,7 @@ namespace RPMac {
             f.CurveReadout = new TextBlock { FontSize = 12, Foreground = SUB, Margin = new Thickness(2, 6, 0, 0), TextWrapping = TextWrapping.Wrap };
             wrap.Children.Add(f.CurveReadout);
             wrap.Children.Add(new TextBlock {
-                Text = "Drag a point to move it · double-click the graph to add one · right-click a point to remove it",
+                Text = I18n.T("Drag a point to move it · double-click the graph to add one · right-click a point to remove it"),
                 FontSize = 10.5, Foreground = SUB, Opacity = 0.7, Margin = new Thickness(2, 4, 0, 0), TextWrapping = TextWrapping.Wrap
             });
 
@@ -892,7 +893,7 @@ namespace RPMac {
             };
             el.MouseRightButtonUp += delegate (object s, MouseButtonEventArgs e) {
                 int i = (int)el.Tag;
-                if (f.Pts.Count <= 2) { status.Text = "A curve needs at least two points."; e.Handled = true; return; }
+                if (f.Pts.Count <= 2) { status.Text = I18n.T("A curve needs at least two points."); e.Handled = true; return; }
                 if (i >= 0 && i < f.Pts.Count) {
                     f.Pts.RemoveAt(i); f.SyncFlat(); RenderCurve(f); MarkCurveEdited(f);
                 }
@@ -958,8 +959,8 @@ namespace RPMac {
 
             var sb = new StringBuilder();
             for (int i = 0; i < f.Pts.Count; i++) {
-                if (i > 0) sb.Append("   ·   ");
-                sb.Append(string.Format("{0} → {1:0}", ShortTemp(f.Pts[i].T), f.Pts[i].R));
+                if (i > 0) sb.Append(I18n.T("   ·   "));
+                sb.Append(string.Format(I18n.T("{0} → {1:0}"), ShortTemp(f.Pts[i].T), f.Pts[i].R));
             }
             f.CurveReadout.Text = sb.ToString() + " RPM";
         }
@@ -1059,15 +1060,15 @@ namespace RPMac {
             try {
                 Dispatcher.Invoke((Action)delegate {
                     if (launched) {
-                        status.Text = "EMERGENCY SHUTDOWN — " + reason + ". Run  shutdown /a  to cancel.";
+                        status.Text = I18n.T("EMERGENCY SHUTDOWN — ") + reason + I18n.T(". Run  shutdown /a  to cancel.");
                         if (tray != null) {
-                            tray.BalloonTipTitle = "RPMac is shutting this PC down";
-                            tray.BalloonTipText = reason + "\r\nRun  shutdown /a  to cancel.";
+                            tray.BalloonTipTitle = I18n.T("RPMac is shutting this PC down");
+                            tray.BalloonTipText = reason + I18n.T("\r\nRun  shutdown /a  to cancel.");
                             tray.BalloonTipIcon = System.Windows.Forms.ToolTipIcon.Warning;
                             try { tray.ShowBalloonTip(30000); } catch { }
                         }
                     } else {
-                        status.Text = "Emergency shutdown was triggered but shutdown.exe failed: " + err;
+                        status.Text = I18n.T("Emergency shutdown was triggered but shutdown.exe failed: ") + err;
                     }
                 });
             } catch { }
@@ -1145,17 +1146,17 @@ namespace RPMac {
         // 'quiet' = el usuario solo movió un punto de una curva que ya estaba activa:
         // se guarda y sigue, sin volver a anunciar el modo.
         void ApplyCurveFromUi(FanUi f, bool quiet) {
-            if (f.Pts.Count < 2) { status.Text = "Curve: needs at least two points."; return; }
+            if (f.Pts.Count < 2) { status.Text = I18n.T("Curve: needs at least two points."); return; }
             string key = null;
             var item = f.CurveSensor.SelectedItem as ComboBoxItem;
             if (item != null) key = item.Tag as string;
-            if (key == null) { status.Text = "Curve: pick a sensor first."; return; }
+            if (key == null) { status.Text = I18n.T("Curve: pick a sensor first."); return; }
             f.CurveSensorKey = key;
             f.SyncFlat();
             if (!quiet) SetMode(f, "curve");
             Settings.SetFanCurve(f.Index, key, PointsToText(f));
             ClearActivePreset();
-            status.Text = string.Format("Fan {0}: curve on · {1} · {2} points, {3:0}–{4:0} RPM",
+            status.Text = string.Format(I18n.T("Fan {0}: curve on · {1} · {2} points, {3:0}–{4:0} RPM"),
                 f.Index, (key == HIGHEST_SENSOR ? "highest temp" : key), f.Pts.Count,
                 f.Pts[0].R, f.Pts[f.Pts.Count - 1].R);
         }
@@ -1190,7 +1191,7 @@ namespace RPMac {
             }
             ApplyCurveFromUi(src);
             ClearActivePreset();
-            status.Text = string.Format("Curve copied to {0} other fan{1}.", n, n == 1 ? "" : "s");
+            status.Text = string.Format(I18n.T(n == 1 ? "Curve copied to {0} other fan." : "Curve copied to {0} other fans."), n);
         }
 
         // Curva -> texto para el config: "t0,r0;t1,r1;..."
@@ -1249,11 +1250,11 @@ namespace RPMac {
                 head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
                 var headL = new StackPanel { VerticalAlignment = VerticalAlignment.Bottom };
                 headL.Children.Add(new TextBlock {
-                    Text = fname == null ? ("FAN " + fi.Index) : ("FAN " + fi.Index + " · " + fname.ToUpperInvariant()),
+                    Text = fname == null ? (I18n.T("FAN ") + fi.Index) : (I18n.T("FAN ") + fi.Index + " · " + fname.ToUpperInvariant()),
                     FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = SUB
                 });
                 headL.Children.Add(new TextBlock {
-                    Text = string.Format("{0:0}–{1:0} RPM range", fmn, double.IsNaN(fi.Max) ? 6000 : fi.Max),
+                    Text = string.Format(I18n.T("{0:0}–{1:0} RPM range"), fmn, double.IsNaN(fi.Max) ? 6000 : fi.Max),
                     FontSize = 11, Foreground = SUB, Opacity = 0.75, Margin = new Thickness(0, 2, 0, 4)
                 });
                 head.Children.Add(headL);
@@ -1280,15 +1281,15 @@ namespace RPMac {
 
                 // Selector de modo como control segmentado (una sola pieza, no 4 botones sueltos)
                 var seg = new StackPanel { Orientation = Orientation.Horizontal };
-                f.Auto = SegButton("Auto", delegate { if (!Guard()) return; Smc.SetFanAuto(f.Index); SetMode(f, "auto"); Settings.SetFan(f.Index, "auto", 0); ClearActivePreset(); });
-                f.MaxBtn = SegButton("Max", delegate { if (!Guard()) return; Smc.SetFanMax(f.Index); SetMode(f, "max"); Settings.SetFan(f.Index, "max", 0); ClearActivePreset(); });
-                f.Manual = SegButton("Manual", delegate { if (!Guard()) return; SetMode(f, "manual"); });
+                f.Auto = SegButton(I18n.T("Auto"), delegate { if (!Guard()) return; Smc.SetFanAuto(f.Index); SetMode(f, "auto"); Settings.SetFan(f.Index, "auto", 0); ClearActivePreset(); });
+                f.MaxBtn = SegButton(I18n.T("Max"), delegate { if (!Guard()) return; Smc.SetFanMax(f.Index); SetMode(f, "max"); Settings.SetFan(f.Index, "max", 0); ClearActivePreset(); });
+                f.Manual = SegButton(I18n.T("Manual"), delegate { if (!Guard()) return; SetMode(f, "manual"); });
                 f.Auto.ToolTip = "Give the fan back to the Mac's own thermal control";
                 f.MaxBtn.ToolTip = "Run this fan at full speed";
                 f.Manual.ToolTip = "Hold a fixed RPM you choose";
                 seg.Children.Add(f.Auto); seg.Children.Add(f.MaxBtn); seg.Children.Add(f.Manual);
                 if (availSensors.Count > 0) {
-                    f.CurveBtn = SegButton("Curve", delegate { if (!Guard()) return; SetMode(f, "curve"); });
+                    f.CurveBtn = SegButton(I18n.T("Curve"), delegate { if (!Guard()) return; SetMode(f, "curve"); });
                     f.CurveBtn.ToolTip = "Ramp the RPM automatically from a temperature sensor";
                     seg.Children.Add(f.CurveBtn);
                 }
@@ -1310,7 +1311,7 @@ namespace RPMac {
                 col.Children.Add(manualRow);
                 f.ManualRow = manualRow;
 
-                var apply = Chip("Apply RPM", ACCENT, Brushes.White, delegate { if (!Guard()) return; Smc.SetFanRpm(f.Index, f.Slider.Value); SetMode(f, "manual"); Settings.SetFan(f.Index, "manual", (int)f.Slider.Value); ClearActivePreset(); });
+                var apply = Chip(I18n.T("Apply RPM"), ACCENT, Brushes.White, delegate { if (!Guard()) return; Smc.SetFanRpm(f.Index, f.Slider.Value); SetMode(f, "manual"); Settings.SetFan(f.Index, "manual", (int)f.Slider.Value); ClearActivePreset(); });
                 apply.Margin = new Thickness(0, 12, 0, 0);
                 apply.HorizontalAlignment = HorizontalAlignment.Left;
                 col.Children.Add(apply);
@@ -1320,12 +1321,12 @@ namespace RPMac {
                 if (availSensors.Count > 0) {
                     var cv = new StackPanel { Margin = new Thickness(0, 10, 0, 0) };
                     var sensRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 2) };
-                    sensRow.Children.Add(new TextBlock { Text = "Sensor", Foreground = SUB, Width = 70, VerticalAlignment = VerticalAlignment.Center, FontSize = 12 });
+                    sensRow.Children.Add(new TextBlock { Text = I18n.T("Sensor"), Foreground = SUB, Width = 70, VerticalAlignment = VerticalAlignment.Center, FontSize = 12 });
                     f.CurveSensor = new ComboBox { Width = 200, VerticalAlignment = VerticalAlignment.Center };
                     // "Highest temp" (max of all sensors) first, so a fan can react to whichever
                     // sensor is hottest — useful on iMacs where CPU or GPU can each spike.
-                    f.CurveSensor.Items.Add(new ComboBoxItem { Content = "Highest temp (any sensor)", Tag = HIGHEST_SENSOR });
-                    foreach (var sg in availSensors) f.CurveSensor.Items.Add(new ComboBoxItem { Content = sg[1], Tag = sg[0] });
+                    f.CurveSensor.Items.Add(new ComboBoxItem { Content = I18n.T("Highest temp (any sensor)"), Tag = HIGHEST_SENSOR });
+                    foreach (var sg in availSensors) f.CurveSensor.Items.Add(new ComboBoxItem { Content = I18n.T(sg[1]), Tag = sg[0] });
                     f.CurveSensor.SelectedIndex = 0;
                     sensRow.Children.Add(f.CurveSensor);
                     cv.Children.Add(sensRow);
@@ -1340,13 +1341,13 @@ namespace RPMac {
 
                     var fc = f;
                     var applyRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0), HorizontalAlignment = HorizontalAlignment.Left };
-                    var curveApply = Chip("Apply curve", ACCENT, Brushes.White, delegate { if (!Guard()) return; ApplyCurveFromUi(fc); });
+                    var curveApply = Chip(I18n.T("Apply curve"), ACCENT, Brushes.White, delegate { if (!Guard()) return; ApplyCurveFromUi(fc); });
                     f.CurveApply = curveApply;
                     applyRow.Children.Add(curveApply);
                     // Con varios ventiladores, copiar esta curva a todos ahorra repetir el
                     // trabajo punto por punto en cada uno (Mac Pro con 4-5 ventiladores).
                     if (Smc.GetFans().Count > 1) {
-                        var toAll = Chip("Copy to all fans", CHIP, TXT, delegate { if (!Guard()) return; CopyCurveToAll(fc); });
+                        var toAll = Chip(I18n.T("Copy to all fans"), CHIP, TXT, delegate { if (!Guard()) return; CopyCurveToAll(fc); });
                         toAll.ToolTip = "Give every fan this same curve and sensor";
                         applyRow.Children.Add(toAll);
                     }
@@ -1423,7 +1424,7 @@ namespace RPMac {
 
         void BuildHistoryCard(Panel parent) {
             var col = new StackPanel();
-            col.Children.Add(SectionLabel("Last 5 minutes", 0));
+            col.Children.Add(SectionLabel(I18n.T("Last 5 minutes"), 0));
 
             histCv = new Canvas { Width = CV_W, Height = HIST_H, ClipToBounds = true };
             for (int i = 1; i <= 3; i++) {   // rejilla horizontal
@@ -1442,10 +1443,10 @@ namespace RPMac {
 
             var legend = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(2, 8, 0, 0) };
             legend.Children.Add(new Border { Width = 9, Height = 3, CornerRadius = new CornerRadius(1.5), Background = ACCENT, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 6, 0) });
-            histLegendTemp = new TextBlock { Text = "Hottest sensor", FontSize = 11.5, Foreground = SUB, VerticalAlignment = VerticalAlignment.Center };
+            histLegendTemp = new TextBlock { Text = I18n.T("Hottest sensor"), FontSize = 11.5, Foreground = SUB, VerticalAlignment = VerticalAlignment.Center };
             legend.Children.Add(histLegendTemp);
             legend.Children.Add(new Border { Width = 9, Height = 3, CornerRadius = new CornerRadius(1.5), Background = SUB, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(18, 0, 6, 0) });
-            histLegendRpm = new TextBlock { Text = "Fan RPM", FontSize = 11.5, Foreground = SUB, VerticalAlignment = VerticalAlignment.Center };
+            histLegendRpm = new TextBlock { Text = I18n.T("Fan RPM"), FontSize = 11.5, Foreground = SUB, VerticalAlignment = VerticalAlignment.Center };
             legend.Children.Add(histLegendRpm);
             col.Children.Add(legend);
 
@@ -1478,8 +1479,8 @@ namespace RPMac {
             }
             histTempLine.Points = pt;
             histRpmLine.Points = pr;
-            if (!double.IsNaN(temp)) histLegendTemp.Text = "Hottest sensor  " + FormatTemp(temp);
-            if (!double.IsNaN(rpm)) histLegendRpm.Text = "Fan RPM  " + ((int)rpm);
+            if (!double.IsNaN(temp)) histLegendTemp.Text = I18n.T("Hottest sensor  ") + FormatTemp(temp);
+            if (!double.IsNaN(rpm)) histLegendRpm.Text = I18n.T("Fan RPM  ") + ((int)rpm);
         }
 
         // Panel compacto de la página de ventiladores: nombre + valor, agrupado.
@@ -1489,7 +1490,7 @@ namespace RPMac {
 
         void BuildLiveTemps(Panel parent) {
             var col = new StackPanel();
-            col.Children.Add(SectionLabel("Live temperatures", 0));
+            col.Children.Add(SectionLabel(I18n.T("Live temperatures"), 0));
 
             string lastGroup = null; int shown = 0;
             foreach (var c in SENSORS) {
@@ -1497,20 +1498,20 @@ namespace RPMac {
                 if (double.IsNaN(v) || v < 5 || v > 120) continue;
                 string g = TempGroup(c[0]);
                 if (g != lastGroup) {
-                    col.Children.Add(new TextBlock { Text = g, FontSize = 9.5, Foreground = SUB, Opacity = 0.65, Margin = new Thickness(0, shown == 0 ? 2 : 9, 0, 3) });
+                    col.Children.Add(new TextBlock { Text = I18n.T(g), FontSize = 9.5, Foreground = SUB, Opacity = 0.65, Margin = new Thickness(0, shown == 0 ? 2 : 9, 0, 3) });
                     lastGroup = g;
                 }
                 var g2 = new Grid { Margin = new Thickness(0, 2.5, 0, 2.5) };
                 g2.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 g2.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(62) });
-                g2.Children.Add(new TextBlock { Text = c[1], Foreground = SUB, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center });
+                g2.Children.Add(new TextBlock { Text = I18n.T(c[1]), Foreground = SUB, FontSize = 12, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center });
                 var val = new TextBlock { Text = "—", Foreground = TXT, FontSize = 12, FontWeight = FontWeights.SemiBold, TextAlignment = TextAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
                 Grid.SetColumn(val, 1); g2.Children.Add(val);
                 summaryLabels[c[0]] = val;
                 col.Children.Add(g2);
                 shown++;
             }
-            if (shown == 0) col.Children.Add(new TextBlock { Text = "No sensors detected.", Foreground = SUB, FontSize = 12 });
+            if (shown == 0) col.Children.Add(new TextBlock { Text = I18n.T("No sensors detected."), Foreground = SUB, FontSize = 12 });
 
             var card = Card(col);
             card.Margin = new Thickness(4, 6, 0, 10);
@@ -1520,7 +1521,7 @@ namespace RPMac {
 
         // Página de sensores: una tarjeta por grupo (CPU / GPU / SYSTEM) en columnas.
         void BuildTempsPane(Panel parent) {
-            var groups = new[] { "CPU", "GPU", "SYSTEM" };
+            var groups = new[] { "CPU", "GPU", "SYSTEM" };   // se comparan con TempGroup(): se traducen solo al mostrarlos
             var row = new Grid();
             for (int i = 0; i < groups.Length; i++)
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -1528,16 +1529,16 @@ namespace RPMac {
             int total = 0;
             for (int i = 0; i < groups.Length; i++) {
                 var col = new StackPanel();
-                col.Children.Add(SectionLabel(groups[i], 0));
+                col.Children.Add(SectionLabel(I18n.T(groups[i]), 0));
                 int shown = 0;
                 foreach (var c in SENSORS) {
                     if (TempGroup(c[0]) != groups[i]) continue;
                     double v = Smc.ReadTemp(c[0]);
                     if (double.IsNaN(v) || v < 5 || v > 120) continue;
-                    col.Children.Add(TempRowKeyed(c[1], c[0]));
+                    col.Children.Add(TempRowKeyed(I18n.T(c[1]), c[0]));
                     shown++;
                 }
-                if (shown == 0) col.Children.Add(new TextBlock { Text = "None detected", Foreground = SUB, Opacity = 0.6, FontSize = 12 });
+                if (shown == 0) col.Children.Add(new TextBlock { Text = I18n.T("None detected"), Foreground = SUB, Opacity = 0.6, FontSize = 12 });
                 total += shown;
                 var card = Card(col);
                 card.Margin = new Thickness(i == 0 ? 0 : 5, 0, i == groups.Length - 1 ? 0 : 5, 10);
@@ -1546,13 +1547,13 @@ namespace RPMac {
                 row.Children.Add(card);
             }
             parent.Children.Add(row);
-            if (total == 0) parent.Children.Add(Card(new TextBlock { Text = "No known sensors detected on this Mac.", Foreground = SUB, TextWrapping = TextWrapping.Wrap }));
+            if (total == 0) parent.Children.Add(Card(new TextBlock { Text = I18n.T("No known sensors detected on this Mac."), Foreground = SUB, TextWrapping = TextWrapping.Wrap }));
 
             // Lista cruda (todas las claves T* que responden), bajo demanda
             var rawCol = new StackPanel();
-            rawCol.Children.Add(SectionLabel("All sensors (raw)", 0));
-            rawCol.Children.Add(new TextBlock { Text = "Every temperature key the SMC reports, including ones RPMac can't name.", Foreground = SUB, FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 10) });
-            var toggle = Chip("Show all sensors (raw)", CHIP, TXT, delegate { ToggleAll(); });
+            rawCol.Children.Add(SectionLabel(I18n.T("All sensors (raw)"), 0));
+            rawCol.Children.Add(new TextBlock { Text = I18n.T("Every temperature key the SMC reports, including ones RPMac can't name."), Foreground = SUB, FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 10) });
+            var toggle = Chip(I18n.T("Show all sensors (raw)"), CHIP, TXT, delegate { ToggleAll(); });
             toggle.HorizontalAlignment = HorizontalAlignment.Left;
             rawCol.Children.Add(toggle);
             allPanel = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 12, 0, 0) };
@@ -1573,9 +1574,9 @@ namespace RPMac {
         // poder usarla en curvas, "Highest temp", overlay, bandeja y CSV.
         void BuildCustomSensorCard(Panel parent) {
             var col = new StackPanel();
-            col.Children.Add(SectionLabel("Name a sensor of your own", 0));
+            col.Children.Add(SectionLabel(I18n.T("Name a sensor of your own"), 0));
             col.Children.Add(new TextBlock {
-                Text = "Some Macs expose sensors RPMac doesn't have a name for. Give one a name and it becomes a normal sensor: usable in curves, \"Highest temp\", the overlay, the tray and the CSV.",
+                Text = I18n.T("Some Macs expose sensors RPMac doesn't have a name for. Give one a name and it becomes a normal sensor: usable in curves, \"Highest temp\", the overlay, the tray and the CSV."),
                 Foreground = SUB, FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 10)
             });
 
@@ -1584,13 +1585,13 @@ namespace RPMac {
             row.Children.Add(customKeyCombo);
             customNameBox = new TextBox { Width = 230, Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = "The name you want to see, e.g. \"Northbridge\"" };
             row.Children.Add(customNameBox);
-            var add = Chip("Add", ACCENT, Brushes.White, delegate { AddCustomSensor(); });
+            var add = Chip(I18n.T("Add"), ACCENT, Brushes.White, delegate { AddCustomSensor(); });
             add.Margin = new Thickness(10, 0, 0, 0);
             row.Children.Add(add);
             col.Children.Add(row);
 
             col.Children.Add(new TextBlock {
-                Text = "The list fills in once you press \"Show all sensors (raw)\" above.",
+                Text = I18n.T("The list fills in once you press \"Show all sensors (raw)\" above."),
                 Foreground = SUB, Opacity = 0.7, FontSize = 10.5, Margin = new Thickness(2, 6, 0, 0)
             });
 
@@ -1624,10 +1625,10 @@ namespace RPMac {
                 var r = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
                 r.Children.Add(new TextBlock { Text = kv.Value, Foreground = TXT, FontSize = 12.5, Width = 230, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
                 r.Children.Add(new TextBlock { Text = key.Trim(), Foreground = SUB, Opacity = 0.6, FontSize = 10.5, FontFamily = new FontFamily("Consolas"), Width = 50, VerticalAlignment = VerticalAlignment.Center });
-                var del = Chip("Remove", CHIP, TXT, delegate {
+                var del = Chip(I18n.T("Remove"), CHIP, TXT, delegate {
                     Settings.CustomSensors.Remove(key);
                     Settings.Save();
-                    ApplySensorChange("Removed " + key.Trim() + ".");
+                    ApplySensorChange(I18n.T("Removed ") + key.Trim() + ".");
                 });
                 del.Padding = new Thickness(11, 5, 11, 5);
                 r.Children.Add(del);
@@ -1637,16 +1638,16 @@ namespace RPMac {
 
         void AddCustomSensor() {
             var it = customKeyCombo.SelectedItem as ComboBoxItem;
-            if (it == null) { status.Text = "Press \"Show all sensors (raw)\" first, then pick a key."; return; }
+            if (it == null) { status.Text = I18n.T("Press \"Show all sensors (raw)\" first, then pick a key."); return; }
             string key = it.Tag as string;
             string name = (customNameBox.Text ?? "").Trim();
-            if (name.Length == 0) { status.Text = "Give the sensor a name first."; return; }
+            if (name.Length == 0) { status.Text = I18n.T("Give the sensor a name first."); return; }
             double v = Smc.ReadTemp(key);
-            if (double.IsNaN(v)) { status.Text = key.Trim() + " isn't reading a temperature right now."; return; }
+            if (double.IsNaN(v)) { status.Text = key.Trim() + I18n.T(" isn't reading a temperature right now."); return; }
             Settings.CustomSensors[key] = name;
             Settings.Save();
             customNameBox.Text = "";
-            ApplySensorChange("Added " + name + " (" + key.Trim() + ").");
+            ApplySensorChange(I18n.T("Added ") + name + " (" + key.Trim() + ").");
         }
 
         // Aplica en caliente un cambio en la lista de sensores: rehace la p�gina de
@@ -1673,8 +1674,8 @@ namespace RPMac {
             if (overlayWrap != null) {
                 overlayWrap.Children.Clear();
                 overlayItemList = new List<string[]>();
-                foreach (var f in fans) overlayItemList.Add(new[] { "fan" + f.Index, "Fan " + f.Index });
-                foreach (var c in SENSORS) if (curatedLabels.ContainsKey(c[0])) overlayItemList.Add(new[] { c[0], c[1] });
+                foreach (var f in fans) overlayItemList.Add(new[] { "fan" + f.Index, I18n.T("Fan ") + f.Index });
+                foreach (var c in SENSORS) if (curatedLabels.ContainsKey(c[0])) overlayItemList.Add(new[] { c[0], I18n.T(c[1]) });
                 foreach (var it2 in overlayItemList) overlayWrap.Children.Add(MakeOverlayChip(it2[0], it2[1]));
             }
             RefreshOverlayNow();
@@ -1684,10 +1685,10 @@ namespace RPMac {
         // Rellena un desplegable de sensores conservando la selecci�n actual.
         void RefillSensorCombo(ComboBox combo, string selectedKey, bool withHighest) {
             combo.Items.Clear();
-            if (withHighest) combo.Items.Add(new ComboBoxItem { Content = "Highest temp (any sensor)", Tag = HIGHEST_SENSOR });
+            if (withHighest) combo.Items.Add(new ComboBoxItem { Content = I18n.T("Highest temp (any sensor)"), Tag = HIGHEST_SENSOR });
             foreach (var c in SENSORS) {
                 if (!curatedLabels.ContainsKey(c[0])) continue;
-                combo.Items.Add(new ComboBoxItem { Content = c[1], Tag = c[0] });
+                combo.Items.Add(new ComboBoxItem { Content = I18n.T(c[1]), Tag = c[0] });
             }
             foreach (var obj in combo.Items) {
                 var ci = obj as ComboBoxItem;
@@ -1699,11 +1700,11 @@ namespace RPMac {
         void RefillTrayCombo() {
             string sel = Settings.TrayMode;
             trayModeCombo.Items.Clear();
-            trayModeCombo.Items.Add(new ComboBoxItem { Content = "App Icon", Tag = "icon" });
-            trayModeCombo.Items.Add(new ComboBoxItem { Content = "None", Tag = "none" });
-            trayModeCombo.Items.Add(new ComboBoxItem { Content = "Highest Temp", Tag = "highest" });
+            trayModeCombo.Items.Add(new ComboBoxItem { Content = I18n.T("App Icon"), Tag = "icon" });
+            trayModeCombo.Items.Add(new ComboBoxItem { Content = I18n.T("None"), Tag = "none" });
+            trayModeCombo.Items.Add(new ComboBoxItem { Content = I18n.T("Highest Temp"), Tag = "highest" });
             foreach (var c in SENSORS)
-                if (curatedLabels.ContainsKey(c[0])) trayModeCombo.Items.Add(new ComboBoxItem { Content = c[1], Tag = c[0] });
+                if (curatedLabels.ContainsKey(c[0])) trayModeCombo.Items.Add(new ComboBoxItem { Content = I18n.T(c[1]), Tag = c[0] });
             foreach (var obj in trayModeCombo.Items) {
                 var ci = obj as ComboBoxItem;
                 if (ci != null && (ci.Tag as string) == sel) { trayModeCombo.SelectedItem = ci; break; }
@@ -1724,7 +1725,7 @@ namespace RPMac {
                 FillCustomKeyCombo();
                 return;
             }
-            allPanel.Children.Add(new TextBlock { Text = "Detecting sensors… (raw, unverified list)", Foreground = SUB });
+            allPanel.Children.Add(new TextBlock { Text = I18n.T("Detecting sensors… (raw, unverified list)"), Foreground = SUB });
             new Thread(delegate () {
                 var keys = Smc.EnumTempKeys();
                 Dispatcher.Invoke((Action)delegate {
@@ -1763,10 +1764,10 @@ namespace RPMac {
         };
 
         void BuildThemeRow(Panel col) {
-            col.Children.Add(new TextBlock { Text = "Theme", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 16, 0, 8) });
+            col.Children.Add(new TextBlock { Text = I18n.T("Theme"), Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 16, 0, 8) });
             var wrap = new WrapPanel { Orientation = Orientation.Horizontal };
             foreach (var t in THEMES) {
-                string key = t[0]; string label = t[1];
+                string key = t[0]; string label = I18n.T(t[1]);
                 var tb = new TextBlock { Text = label, FontSize = 13, FontWeight = FontWeights.SemiBold };
                 var bd = new Border { CornerRadius = new CornerRadius(9), Padding = new Thickness(15, 8, 15, 8), Margin = new Thickness(0, 0, 8, 8), Cursor = Cursors.Hand, Child = tb };
                 bd.MouseEnter += delegate { if (Settings.Theme != key) bd.Opacity = 0.82; };
@@ -1776,7 +1777,7 @@ namespace RPMac {
                     ApplyTheme(key);
                     SelectThemeChips();
                     ApplyTrayMode(null); // refresh tray digit color for the new theme
-                    status.Text = "Theme: " + label;
+                    status.Text = I18n.T("Theme: ") + label;
                 };
                 themeChips[key] = bd; themeChipLabels[key] = tb;
                 wrap.Children.Add(bd);
@@ -1795,20 +1796,45 @@ namespace RPMac {
 
         void BuildSettingsCard(Panel parent) {
             var col = new StackPanel();
-            col.Children.Add(new TextBlock { Text = "Settings", FontSize = 15, FontWeight = FontWeights.Bold, Foreground = TXT, Margin = new Thickness(0, 0, 0, 12) });
+            col.Children.Add(new TextBlock { Text = I18n.T("Settings"), FontSize = 15, FontWeight = FontWeights.Bold, Foreground = TXT, Margin = new Thickness(0, 0, 0, 12) });
 
             var row = new DockPanel { LastChildFill = true };
             var labels = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            labels.Children.Add(new TextBlock { Text = "Start with Windows", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
-            labels.Children.Add(new TextBlock { Text = "Automatically opens the app at sign-in.", Foreground = SUB, FontSize = 11, Margin = new Thickness(0, 2, 0, 0) });
+            // Language selector
+            var langRow = new StackPanel { Orientation = Orientation.Horizontal };
+            langRow.Children.Add(new TextBlock { Text = I18n.T("Language"), Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
+            col.Children.Add(langRow);
+            col.Children.Add(new TextBlock { Text = I18n.T("Choose the interface language."), Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 8) });
+            var langChips = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 14) };
+            string[] langs = { "en", "it" };
+            string[] langLabels = { "English", "Italiano" };
+            for (int li = 0; li < langs.Length; li++) {
+                string lc = langs[li];
+                bool lact = (Settings.Language == lc);
+                var lbd = Chip(langLabels[li], lact ? ACCENT : CHIP, lact ? Brushes.White : TXT, delegate {
+                    if (Settings.Language == lc) return;
+                    Settings.Language = lc;
+                    Settings.Save();
+                    // Relaunch to apply the new language. The new instance waits for this one
+                    // to exit (see Main) instead of bowing out to the single-instance mutex.
+                    try { System.Diagnostics.Process.Start(System.Reflection.Assembly.GetExecutingAssembly().Location, App.RELAUNCH_ARG); } catch { }
+                    QuitApp();
+                });
+                lbd.Margin = new Thickness(0, 0, 8, 0);
+                langChips.Children.Add(lbd);
+            }
+            col.Children.Add(langChips);
+
+            labels.Children.Add(new TextBlock { Text = I18n.T("Start with Windows"), Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
+            labels.Children.Add(new TextBlock { Text = I18n.T("Automatically opens the app at sign-in."), Foreground = SUB, FontSize = 11, Margin = new Thickness(0, 2, 0, 0) });
 
             string exe = System.Reflection.Assembly.GetExecutingAssembly().Location;
             bool enabled = false; try { enabled = Startup.IsEnabled(); } catch { }
             var toggle = BuildToggle(enabled, delegate (bool on) {
                 try {
                     if (on) Startup.Enable(exe); else Startup.Disable();
-                    status.Text = on ? "Start with Windows: enabled" : "Start with Windows: disabled";
-                } catch (Exception ex) { status.Text = "Error: " + ex.Message; }
+                    status.Text = on ? I18n.T("Start with Windows: enabled") : I18n.T("Start with Windows: disabled");
+                } catch (Exception ex) { status.Text = I18n.T("Error: ") + ex.Message; }
             });
             DockPanel.SetDock(toggle, Dock.Right);
             row.Children.Add(toggle);
@@ -1817,11 +1843,11 @@ namespace RPMac {
 
             var row2 = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 14, 0, 0) };
             var labels2 = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            labels2.Children.Add(new TextBlock { Text = "Start minimized to tray", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
-            labels2.Children.Add(new TextBlock { Text = "Launch hidden in the system tray (next to the clock).", Foreground = SUB, FontSize = 11, Margin = new Thickness(0, 2, 0, 0) });
+            labels2.Children.Add(new TextBlock { Text = I18n.T("Start minimized to tray"), Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
+            labels2.Children.Add(new TextBlock { Text = I18n.T("Launch hidden in the system tray (next to the clock)."), Foreground = SUB, FontSize = 11, Margin = new Thickness(0, 2, 0, 0) });
             var toggle2 = BuildToggle(Settings.StartMinimized, delegate (bool on) {
                 Settings.StartMinimized = on; Settings.Save();
-                status.Text = on ? "Start minimized: on" : "Start minimized: off";
+                status.Text = on ? I18n.T("Start minimized: on") : I18n.T("Start minimized: off");
             });
             DockPanel.SetDock(toggle2, Dock.Right);
             row2.Children.Add(toggle2);
@@ -1830,12 +1856,12 @@ namespace RPMac {
 
             var row3 = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 14, 0, 0) };
             var labels3 = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            labels3.Children.Add(new TextBlock { Text = "Show temperatures in °F", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
-            labels3.Children.Add(new TextBlock { Text = "Display temperatures in Fahrenheit instead of Celsius.", Foreground = SUB, FontSize = 11, Margin = new Thickness(0, 2, 0, 0) });
+            labels3.Children.Add(new TextBlock { Text = I18n.T("Show temperatures in °F"), Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
+            labels3.Children.Add(new TextBlock { Text = I18n.T("Display temperatures in Fahrenheit instead of Celsius."), Foreground = SUB, FontSize = 11, Margin = new Thickness(0, 2, 0, 0) });
             var toggle3 = BuildToggle(Settings.Fahrenheit, delegate (bool on) {
                 Settings.Fahrenheit = on; Settings.Save();
                 ReformatTemps();
-                status.Text = on ? "Temperatures: °F" : "Temperatures: °C";
+                status.Text = on ? I18n.T("Temperatures: °F") : I18n.T("Temperatures: °C");
             });
             DockPanel.SetDock(toggle3, Dock.Right);
             row3.Children.Add(toggle3);
@@ -1845,12 +1871,12 @@ namespace RPMac {
             // ---- Smooth fan changes ----
             var rowSm = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 14, 0, 0) };
             var labelsSm = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            labelsSm.Children.Add(new TextBlock { Text = "Smooth fan changes", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
-            labelsSm.Children.Add(new TextBlock { Text = "Ignore tiny temperature wobbles and ease the fan down slowly, so a curve doesn't make it audibly hunt up and down.", Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
+            labelsSm.Children.Add(new TextBlock { Text = I18n.T("Smooth fan changes"), Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
+            labelsSm.Children.Add(new TextBlock { Text = I18n.T("Ignore tiny temperature wobbles and ease the fan down slowly, so a curve doesn't make it audibly hunt up and down."), Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
             var toggleSm = BuildToggle(Settings.Smoothing, delegate (bool on) {
                 Settings.Smoothing = on; Settings.Save();
                 foreach (var fu in fans) fu.LastCurveRpm = double.NaN;   // empezar limpio
-                status.Text = on ? "Smoothing: on" : "Smoothing: off";
+                status.Text = on ? I18n.T("Smoothing: on") : I18n.T("Smoothing: off");
             });
             DockPanel.SetDock(toggleSm, Dock.Right);
             rowSm.Children.Add(toggleSm);
@@ -1860,12 +1886,12 @@ namespace RPMac {
             // ---- Thermal safety limit ----
             var rowG = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 14, 0, 0) };
             var labelsG = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            labelsG.Children.Add(new TextBlock { Text = "Emergency cooling", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
+            labelsG.Children.Add(new TextBlock { Text = I18n.T("Emergency cooling"), Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
             var guardSub = new TextBlock { Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
             labelsG.Children.Add(guardSub);
             var toggleG = BuildToggle(Settings.SafetyGuard, delegate (bool on) {
                 Settings.SafetyGuard = on; Settings.Save();
-                status.Text = on ? "Emergency cooling: on" : "Emergency cooling: off";
+                status.Text = on ? I18n.T("Emergency cooling: on") : I18n.T("Emergency cooling: off");
             });
             DockPanel.SetDock(toggleG, Dock.Right);
             rowG.Children.Add(toggleG);
@@ -1876,7 +1902,7 @@ namespace RPMac {
             var guardRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 0) };
             var guardSlider = new Slider { Minimum = 60, Maximum = 105, Value = Settings.GuardTemp, Width = 260, VerticalAlignment = VerticalAlignment.Center };
             Action paintGuard = delegate {
-                guardSub.Text = string.Format("If any sensor reaches {0}, every fan goes to maximum until it cools down — whatever mode it's in.",
+                guardSub.Text = string.Format(I18n.T("If any sensor reaches {0}, every fan goes to maximum until it cools down — whatever mode it's in."),
                     ShortTemp(Settings.GuardTemp));
             };
             paintGuard();
@@ -1885,7 +1911,7 @@ namespace RPMac {
                 paintGuard();
             };
             guardSlider.PreviewMouseUp += delegate { Settings.Save(); };
-            guardRow.Children.Add(new TextBlock { Text = "Trigger at", Foreground = SUB, FontSize = 12, Width = 70, VerticalAlignment = VerticalAlignment.Center });
+            guardRow.Children.Add(new TextBlock { Text = I18n.T("Trigger at"), Foreground = SUB, FontSize = 12, Width = 70, VerticalAlignment = VerticalAlignment.Center });
             guardRow.Children.Add(guardSlider);
             col.Children.Add(guardRow);
 
@@ -1895,13 +1921,13 @@ namespace RPMac {
             // confirmación sostenida en el bucle, y deja siempre un rastro en disco.
             var rowSd = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 18, 0, 0) };
             var labelsSd = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            labelsSd.Children.Add(new TextBlock { Text = "Emergency shutdown", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
+            labelsSd.Children.Add(new TextBlock { Text = I18n.T("Emergency shutdown"), Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
             var sdSub = new TextBlock { Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
             labelsSd.Children.Add(sdSub);
             var toggleSd = BuildToggle(Settings.EmergencyShutdown, delegate (bool on) {
                 Settings.EmergencyShutdown = on; Settings.Save();
                 shutdownFired = false; overTempTicks = 0; fanStallTicks = 0;
-                status.Text = on ? "Emergency shutdown: on" : "Emergency shutdown: off";
+                status.Text = on ? I18n.T("Emergency shutdown: on") : I18n.T("Emergency shutdown: off");
             });
             DockPanel.SetDock(toggleSd, Dock.Right);
             rowSd.Children.Add(toggleSd);
@@ -1915,7 +1941,7 @@ namespace RPMac {
             bool syncingTemps = false;
             Action paintSd = delegate {
                 sdSub.Text = string.Format(
-                    "For a machine nobody is watching. If the hottest sensor stays at {0} or above for {1} seconds — with the fans already at maximum — Windows is told to shut down cleanly instead of waiting for the CPU to cut power on its own.",
+                    I18n.T("For a machine nobody is watching. If the hottest sensor stays at {0} or above for {1} seconds — with the fans already at maximum — Windows is told to shut down cleanly instead of waiting for the CPU to cut power on its own."),
                     ShortTemp(Settings.ShutdownTemp), SHUTDOWN_CONFIRM_TICKS * 2);
             };
             paintSd();
@@ -1944,20 +1970,20 @@ namespace RPMac {
             sdSlider.PreviewMouseUp += delegate { Settings.Save(); };
             guardSlider.ValueChanged += delegate { syncFromGuard(); };
             syncFromGuard();
-            sdRow.Children.Add(new TextBlock { Text = "Shut down at", Foreground = SUB, FontSize = 12, Width = 90, VerticalAlignment = VerticalAlignment.Center });
+            sdRow.Children.Add(new TextBlock { Text = I18n.T("Shut down at"), Foreground = SUB, FontSize = 12, Width = 90, VerticalAlignment = VerticalAlignment.Center });
             sdRow.Children.Add(sdSlider);
             col.Children.Add(sdRow);
 
             // apagado también si un ventilador que debería girar se queda parado
             var rowStall = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 12, 0, 0) };
             var labelsStall = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            labelsStall.Children.Add(new TextBlock { Text = "Also shut down if a fan stalls", Foreground = TXT, FontSize = 12.5 });
+            labelsStall.Children.Add(new TextBlock { Text = I18n.T("Also shut down if a fan stalls"), Foreground = TXT, FontSize = 12.5 });
             var stallSub = new TextBlock { Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
             labelsStall.Children.Add(stallSub);
             var toggleStall = BuildToggle(Settings.ShutdownOnStall, delegate (bool on) {
                 Settings.ShutdownOnStall = on; Settings.Save();
                 fanStallTicks = 0;
-                status.Text = on ? "Fan-stall shutdown: on" : "Fan-stall shutdown: off";
+                status.Text = on ? I18n.T("Fan-stall shutdown: on") : I18n.T("Fan-stall shutdown: off");
             });
             DockPanel.SetDock(toggleStall, Dock.Right);
             rowStall.Children.Add(toggleStall);
@@ -1968,7 +1994,7 @@ namespace RPMac {
             var stallSlider = new Slider { Minimum = 50, Maximum = 3000, Value = Settings.StallRpm, Width = 260, VerticalAlignment = VerticalAlignment.Center };
             Action paintStall = delegate {
                 stallSub.Text = string.Format(
-                    "A dying fan can cook the machine long before any one sensor hits the limit above. This only counts a fan as stalled when it is being asked to spin faster than {0} RPM and reads below it anyway, for {1} seconds — so a fan that is idle on purpose never triggers it.",
+                    I18n.T("A dying fan can cook the machine long before any one sensor hits the limit above. This only counts a fan as stalled when it is being asked to spin faster than {0} RPM and reads below it anyway, for {1} seconds — so a fan that is idle on purpose never triggers it."),
                     Settings.StallRpm, SHUTDOWN_CONFIRM_TICKS * 2);
             };
             paintStall();
@@ -1977,13 +2003,13 @@ namespace RPMac {
                 paintStall();
             };
             stallSlider.PreviewMouseUp += delegate { Settings.Save(); };
-            stallRow.Children.Add(new TextBlock { Text = "Below", Foreground = SUB, FontSize = 12, Width = 90, VerticalAlignment = VerticalAlignment.Center });
+            stallRow.Children.Add(new TextBlock { Text = I18n.T("Below"), Foreground = SUB, FontSize = 12, Width = 90, VerticalAlignment = VerticalAlignment.Center });
             stallRow.Children.Add(stallSlider);
             col.Children.Add(stallRow);
 
             // argumentos de shutdown.exe (el ejecutable en sí no es configurable)
             var argsRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 12, 0, 0) };
-            argsRow.Children.Add(new TextBlock { Text = "Command", Foreground = SUB, FontSize = 12, Width = 90, VerticalAlignment = VerticalAlignment.Center });
+            argsRow.Children.Add(new TextBlock { Text = I18n.T("Command"), Foreground = SUB, FontSize = 12, Width = 90, VerticalAlignment = VerticalAlignment.Center });
             argsRow.Children.Add(new TextBlock { Text = "shutdown.exe", Foreground = SUB, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
             var argsBox = new TextBox { Text = Settings.ShutdownArgs, Width = 170, Background = BG, VerticalAlignment = VerticalAlignment.Center };
             Action commitArgs = delegate {
@@ -2000,15 +2026,15 @@ namespace RPMac {
             col.Children.Add(argsRow);
 
             col.Children.Add(new TextBlock {
-                Text = "/s shuts down, /f forces programs to close, /t 30 waits 30 seconds first. During that wait you can still cancel it from a command prompt with  shutdown /a . Every shutdown RPMac starts is written to shutdown.log next to the CSV, so you can see why it happened.",
+                Text = I18n.T("/s shuts down, /f forces programs to close, /t 30 waits 30 seconds first. During that wait you can still cancel it from a command prompt with  shutdown /a . Every shutdown RPMac starts is written to shutdown.log next to the CSV, so you can see why it happened."),
                 Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0)
             });
 
             // ---- CSV log ----
             var rowLog = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 14, 0, 0) };
             var labelsLog = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            labelsLog.Children.Add(new TextBlock { Text = "Record to a CSV file", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
-            labelsLog.Children.Add(new TextBlock { Text = "Append every reading to history.csv, so you can look back at what ran hot during a game or a long render.", Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
+            labelsLog.Children.Add(new TextBlock { Text = I18n.T("Record to a CSV file"), Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
+            labelsLog.Children.Add(new TextBlock { Text = I18n.T("Append every reading to history.csv, so you can look back at what ran hot during a game or a long render."), Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
             var toggleLog = BuildToggle(Settings.LogToFile, delegate (bool on) {
                 Settings.LogToFile = on; Settings.Save();
                 status.Text = on ? "Recording to " + LogPath : "Recording stopped";
@@ -2018,12 +2044,12 @@ namespace RPMac {
             rowLog.Children.Add(labelsLog);
             col.Children.Add(rowLog);
 
-            var openLog = Chip("Open the folder", CHIP, TXT, delegate {
+            var openLog = Chip(I18n.T("Open the folder"), CHIP, TXT, delegate {
                 try {
                     string dir = System.IO.Path.GetDirectoryName(LogPath);
                     if (!System.IO.Directory.Exists(dir)) System.IO.Directory.CreateDirectory(dir);
                     System.Diagnostics.Process.Start("explorer.exe", "\"" + dir + "\"");
-                } catch (Exception ex) { status.Text = "Couldn't open the folder: " + ex.Message; }
+                } catch (Exception ex) { status.Text = I18n.T("Couldn't open the folder: ") + ex.Message; }
             });
             openLog.Margin = new Thickness(0, 10, 0, 0);
             openLog.HorizontalAlignment = HorizontalAlignment.Left;
@@ -2032,16 +2058,16 @@ namespace RPMac {
             // ---- Show in tray (dropdown) ----
             var rowTray = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 14, 0, 0) };
             var labelsTray = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            labelsTray.Children.Add(new TextBlock { Text = "Show in tray", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
-            labelsTray.Children.Add(new TextBlock { Text = "Choose what the tray icon displays — the app icon, nothing, or a live temperature.", Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
+            labelsTray.Children.Add(new TextBlock { Text = I18n.T("Show in tray"), Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
+            labelsTray.Children.Add(new TextBlock { Text = I18n.T("Choose what the tray icon displays — the app icon, nothing, or a live temperature."), Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
             trayModeCombo = new ComboBox { Width = 170, VerticalAlignment = VerticalAlignment.Center };
-            trayModeCombo.Items.Add(new ComboBoxItem { Content = "App Icon", Tag = "icon" });
-            trayModeCombo.Items.Add(new ComboBoxItem { Content = "None", Tag = "none" });
-            trayModeCombo.Items.Add(new ComboBoxItem { Content = "Highest Temp", Tag = "highest" });
+            trayModeCombo.Items.Add(new ComboBoxItem { Content = I18n.T("App Icon"), Tag = "icon" });
+            trayModeCombo.Items.Add(new ComboBoxItem { Content = I18n.T("None"), Tag = "none" });
+            trayModeCombo.Items.Add(new ComboBoxItem { Content = I18n.T("Highest Temp"), Tag = "highest" });
             foreach (var c in SENSORS) {
                 double v = Smc.ReadTemp(c[0]);
                 if (!double.IsNaN(v) && v >= 5 && v <= 120)
-                    trayModeCombo.Items.Add(new ComboBoxItem { Content = c[1], Tag = c[0] });
+                    trayModeCombo.Items.Add(new ComboBoxItem { Content = I18n.T(c[1]), Tag = c[0] });
             }
             // Select the saved tray mode
             bool found = false;
@@ -2056,7 +2082,7 @@ namespace RPMac {
                     Settings.TrayMode = sel.Tag as string ?? "icon";
                     Settings.Save();
                     ApplyTrayMode(null);
-                    status.Text = "Show in tray: " + (sel.Content as string);
+                    status.Text = I18n.T("Show in tray: ") + (sel.Content as string);
                 }
             };
             DockPanel.SetDock(trayModeCombo, Dock.Right);
@@ -2066,12 +2092,12 @@ namespace RPMac {
 
             var row4 = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 14, 0, 0) };
             var labels4 = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            labels4.Children.Add(new TextBlock { Text = "On-screen overlay", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
-            labels4.Children.Add(new TextBlock { Text = "Show fan RPM and temperatures on top of everything (top-right corner).", Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
+            labels4.Children.Add(new TextBlock { Text = I18n.T("On-screen overlay"), Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
+            labels4.Children.Add(new TextBlock { Text = I18n.T("Show fan RPM and temperatures on top of everything (top-right corner)."), Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
             var toggle4 = BuildToggle(Settings.Overlay, delegate (bool on) {
                 Settings.Overlay = on; Settings.Save();
                 if (on) ShowOverlay(); else HideOverlay();
-                status.Text = on ? "Overlay: on" : "Overlay: off";
+                status.Text = on ? I18n.T("Overlay: on") : I18n.T("Overlay: off");
             });
             DockPanel.SetDock(toggle4, Dock.Right);
             row4.Children.Add(toggle4);
@@ -2086,10 +2112,10 @@ namespace RPMac {
 
         void BuildOverlayOptions(Panel col) {
             // --- Orientacion ---
-            col.Children.Add(new TextBlock { Text = "Overlay layout", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 16, 0, 8) });
+            col.Children.Add(new TextBlock { Text = I18n.T("Overlay layout"), Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 16, 0, 8) });
             var orient = new WrapPanel { Orientation = Orientation.Horizontal };
-            var vtb = new TextBlock { Text = "Vertical", FontSize = 13, FontWeight = FontWeights.SemiBold };
-            var htb = new TextBlock { Text = "Horizontal", FontSize = 13, FontWeight = FontWeights.SemiBold };
+            var vtb = new TextBlock { Text = I18n.T("Vertical"), FontSize = 13, FontWeight = FontWeights.SemiBold };
+            var htb = new TextBlock { Text = I18n.T("Horizontal"), FontSize = 13, FontWeight = FontWeights.SemiBold };
             var vbd = new Border { CornerRadius = new CornerRadius(9), Padding = new Thickness(15, 8, 15, 8), Margin = new Thickness(0, 0, 8, 8), Cursor = Cursors.Hand, Child = vtb };
             var hbd = new Border { CornerRadius = new CornerRadius(9), Padding = new Thickness(15, 8, 15, 8), Margin = new Thickness(0, 0, 8, 8), Cursor = Cursors.Hand, Child = htb };
             Action paintOrient = delegate {
@@ -2105,11 +2131,11 @@ namespace RPMac {
 
             // --- Que mostrar (ventiladores + sensores presentes) ---
             var items = new List<string[]>();
-            foreach (var f in fans) items.Add(new[] { "fan" + f.Index, "Fan " + f.Index });
-            foreach (var c in SENSORS) if (curatedLabels.ContainsKey(c[0])) items.Add(new[] { c[0], c[1] });
+            foreach (var f in fans) items.Add(new[] { "fan" + f.Index, I18n.T("Fan ") + f.Index });
+            foreach (var c in SENSORS) if (curatedLabels.ContainsKey(c[0])) items.Add(new[] { c[0], I18n.T(c[1]) });
             if (items.Count == 0) return;
 
-            col.Children.Add(new TextBlock { Text = "Show in overlay", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 14, 0, 8) });
+            col.Children.Add(new TextBlock { Text = I18n.T("Show in overlay"), Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 14, 0, 8) });
             overlayWrap = new WrapPanel { Orientation = Orientation.Horizontal };
             overlayItemList = items;
             foreach (var it in items) overlayWrap.Children.Add(MakeOverlayChip(it[0], it[1]));
@@ -2149,11 +2175,11 @@ namespace RPMac {
                 tray.Visible = true;
                 tray.DoubleClick += delegate { ShowFromTray(); };
                 var menu = new System.Windows.Forms.ContextMenuStrip();
-                menu.Items.Add("Open", null, delegate { ShowFromTray(); });
-                trayPresetsItem = new System.Windows.Forms.ToolStripMenuItem("Presets");
+                menu.Items.Add(I18n.T("Open"), null, delegate { ShowFromTray(); });
+                trayPresetsItem = new System.Windows.Forms.ToolStripMenuItem(I18n.T("Presets"));
                 menu.Items.Add(trayPresetsItem);
-                menu.Items.Add("Toggle Overlay", null, delegate { ToggleOverlay(); });
-                menu.Items.Add("Quit", null, delegate { QuitApp(); });
+                menu.Items.Add(I18n.T("Toggle Overlay"), null, delegate { ToggleOverlay(); });
+                menu.Items.Add(I18n.T("Quit"), null, delegate { QuitApp(); });
 
                 tray.ContextMenuStrip = menu;
                 tray.MouseClick += delegate(object sender, System.Windows.Forms.MouseEventArgs e) {
@@ -2176,7 +2202,7 @@ namespace RPMac {
                 trayPresetsItem.DropDownItems.Clear();
                 foreach (var it in old) { try { it.Dispose(); } catch { } }
                 if (Settings.Presets.Count == 0) {
-                    var none = new System.Windows.Forms.ToolStripMenuItem("(no presets yet)") { Enabled = false };
+                    var none = new System.Windows.Forms.ToolStripMenuItem(I18n.T("(no presets yet)")) { Enabled = false };
                     trayPresetsItem.DropDownItems.Add(none);
                     return;
                 }
@@ -2508,8 +2534,8 @@ namespace RPMac {
         void BuildPresetsCard(Panel parent) {
             if (fans.Count == 0) return;   // nothing to save on read-only hardware
             var col = new StackPanel();
-            col.Children.Add(new TextBlock { Text = "Presets", FontSize = 15, FontWeight = FontWeights.Bold, Foreground = TXT, Margin = new Thickness(0, 0, 0, 4) });
-            col.Children.Add(new TextBlock { Text = "Save your current fan setup as a profile and switch with one click.", FontSize = 12, Foreground = SUB, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) });
+            col.Children.Add(new TextBlock { Text = I18n.T("Presets"), FontSize = 15, FontWeight = FontWeights.Bold, Foreground = TXT, Margin = new Thickness(0, 0, 0, 4) });
+            col.Children.Add(new TextBlock { Text = I18n.T("Save your current fan setup as a profile and switch with one click."), FontSize = 12, Foreground = SUB, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 12) });
 
             presetChips = new StackPanel();   // vertical list of profile rows
             col.Children.Add(presetChips);
@@ -2520,13 +2546,13 @@ namespace RPMac {
                 Padding = new Thickness(12, 10, 12, 12), Margin = new Thickness(0, 6, 0, 0)
             };
             var saveCol = new StackPanel();
-            saveCol.Children.Add(new TextBlock { Text = "SAVE CURRENT SETUP", FontSize = 10.5, FontWeight = FontWeights.SemiBold, Foreground = SUB, Margin = new Thickness(2, 0, 0, 7) });
+            saveCol.Children.Add(new TextBlock { Text = I18n.T("SAVE CURRENT SETUP"), FontSize = 10.5, FontWeight = FontWeights.SemiBold, Foreground = SUB, Margin = new Thickness(2, 0, 0, 7) });
 
             var saveRow = new StackPanel { Orientation = Orientation.Horizontal };
             // name field with a faux placeholder
             var nameHost = new Grid { Width = 210, VerticalAlignment = VerticalAlignment.Center };
             presetNameBox = new TextBox { VerticalAlignment = VerticalAlignment.Center, Background = BG };
-            presetPlaceholder = new TextBlock { Text = "Profile name (e.g. Gaming)", Foreground = SUB, FontSize = 12.5, Margin = new Thickness(11, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
+            presetPlaceholder = new TextBlock { Text = I18n.T("Profile name (e.g. Gaming)"), Foreground = SUB, FontSize = 12.5, Margin = new Thickness(11, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
             presetNameBox.TextChanged += delegate { presetPlaceholder.Visibility = string.IsNullOrEmpty(presetNameBox.Text) ? Visibility.Visible : Visibility.Collapsed; };
             presetNameBox.KeyDown += delegate (object s, System.Windows.Input.KeyEventArgs e) {
                 if (e.Key == System.Windows.Input.Key.Enter && Guard()) SaveCurrentAsPreset(presetNameBox.Text);
@@ -2534,7 +2560,7 @@ namespace RPMac {
             nameHost.Children.Add(presetNameBox);
             nameHost.Children.Add(presetPlaceholder);
 
-            var saveBtn = Chip("Save", ACCENT, Brushes.White, delegate { if (!Guard()) return; SaveCurrentAsPreset(presetNameBox.Text); });
+            var saveBtn = Chip(I18n.T("Save"), ACCENT, Brushes.White, delegate { if (!Guard()) return; SaveCurrentAsPreset(presetNameBox.Text); });
             saveBtn.Margin = new Thickness(10, 0, 0, 0);
             saveRow.Children.Add(nameHost);
             saveRow.Children.Add(saveBtn);
@@ -2552,7 +2578,7 @@ namespace RPMac {
             if (presetChips == null) return;
             presetChips.Children.Clear();
             if (Settings.Presets.Count == 0) {
-                presetChips.Children.Add(new TextBlock { Text = "No profiles yet. Set your fans up on the Fans page, then save the setup here.", Foreground = SUB, FontSize = 12, Margin = new Thickness(2, 2, 0, 10), FontStyle = FontStyles.Italic });
+                presetChips.Children.Add(new TextBlock { Text = I18n.T("No profiles yet. Set your fans up on the Fans page, then save the setup here."), Foreground = SUB, FontSize = 12, Margin = new Thickness(2, 2, 0, 10), FontStyle = FontStyles.Italic });
                 return;
             }
             foreach (var name in Settings.Presets.Keys) presetChips.Children.Add(PresetRow(name));
@@ -2582,7 +2608,7 @@ namespace RPMac {
             var applyBtn = new Border {
                 Background = active ? ACCENT : BG, CornerRadius = new CornerRadius(7),
                 Padding = new Thickness(14, 7, 14, 7), Cursor = Cursors.Hand,
-                Child = new TextBlock { Text = active ? "Active" : "Apply", Foreground = active ? Brushes.White : TXT, FontSize = 12.5, FontWeight = FontWeights.SemiBold }
+                Child = new TextBlock { Text = active ? I18n.T("Active") : I18n.T("Apply"), Foreground = active ? Brushes.White : TXT, FontSize = 12.5, FontWeight = FontWeights.SemiBold }
             };
             applyBtn.MouseEnter += delegate { applyBtn.Opacity = 0.82; };
             applyBtn.MouseLeave += delegate { applyBtn.Opacity = 1.0; };
@@ -2618,12 +2644,12 @@ namespace RPMac {
                 var s = kv.Value;
                 string desc;
                 switch (s.Length > 0 ? s[0] : "auto") {
-                    case "max":    desc = "Max"; break;
+                    case "max":    desc = I18n.T("Max"); break;
                     case "manual": desc = (s.Length > 1 ? s[1] : "?") + " RPM"; break;
-                    case "curve":  desc = s.Length >= 7 ? ("Curve " + s[2] + " " + s[3] + "-" + s[4] + "°C") : "Curve"; break;
-                    default:       desc = "Auto"; break;
+                    case "curve":  desc = s.Length >= 7 ? ("Curve " + s[2] + " " + s[3] + "-" + s[4] + "°C") : I18n.T("Curve"); break;
+                    default:       desc = I18n.T("Auto"); break;
                 }
-                parts.Add("Fan " + kv.Key + " " + desc);
+                parts.Add(I18n.T("Fan ") + kv.Key + " " + desc);
             }
             return string.Join(sep, parts.ToArray());
         }
@@ -2642,12 +2668,12 @@ namespace RPMac {
             Settings.Save();
             RebuildPresetChips();             // highlight the active one
             UpdateTrayPresets();
-            status.Text = "Applied preset: " + name;
+            status.Text = I18n.T("Applied preset: ") + name;
         }
 
         void SaveCurrentAsPreset(string name) {
             name = (name ?? "").Trim().Replace("|", " ");   // '|' is the config separator
-            if (name == "") { status.Text = "Type a name for the preset first."; return; }
+            if (name == "") { status.Text = I18n.T("Type a name for the preset first."); return; }
             var snap = new Dictionary<int, string[]>();
             foreach (var f in fans) snap[f.Index] = FanStateToArray(f);
             Settings.Presets[name] = snap;
@@ -2657,7 +2683,7 @@ namespace RPMac {
             Settings.Save();
             RebuildPresetChips();
             UpdateTrayPresets();
-            status.Text = "Saved preset: " + name;
+            status.Text = I18n.T("Saved preset: ") + name;
         }
 
         void DeletePreset(string name) {
@@ -2666,7 +2692,7 @@ namespace RPMac {
                 Settings.Save();
                 RebuildPresetChips();
                 UpdateTrayPresets();
-                status.Text = "Deleted preset: " + name;
+                status.Text = I18n.T("Deleted preset: ") + name;
             }
         }
 
@@ -2689,7 +2715,7 @@ namespace RPMac {
                 try { Dispatcher.Invoke((Action)delegate {
                     if (!running) return;
                     ApplySaved();
-                    status.Text = "Resumed — settings reapplied · " + DateTime.Now.ToString("HH:mm:ss");
+                    status.Text = I18n.T("Resumed — settings reapplied · ") + DateTime.Now.ToString("HH:mm:ss");
                 }); } catch { }
             }) { IsBackground = true }.Start();
         }
@@ -2770,8 +2796,8 @@ namespace RPMac {
                                     f.TargetTick.Visibility = Visibility.Visible;
                                 }
                                 // El rango min-max ya está en la cabecera de la tarjeta
-                                f.Info.Text = string.Format("Target {0:0} RPM · {1}",
-                                    fi.Target, fi.Forced ? "controlled by RPMac" : "controlled by the Mac");
+                                f.Info.Text = string.Format(I18n.T("Target {0:0} RPM · {1}"),
+                                    fi.Target, fi.Forced ? I18n.T("controlled by RPMac") : I18n.T("controlled by the Mac"));
                                 UpdateCurveLive(f);
                             }
                             UpdateTemps(curated, curatedLabels);
@@ -2783,18 +2809,18 @@ namespace RPMac {
                             double hot = double.NaN; string hotKey = null;
                             foreach (var kv in curated)
                                 if (!double.IsNaN(kv.Value) && (hotKey == null || kv.Value > hot)) { hot = kv.Value; hotKey = kv.Key; }
-                            status.Text = "Driver OK · "
-                                + fans.Count + (fans.Count == 1 ? " fan" : " fans")
-                                + " · " + curatedLabels.Count + " sensors"
-                                + (hotKey != null ? " · hottest: " + CuratedName(hotKey) + " " + FormatTemp(hot) : "")
-                                + " · updated " + DateTime.Now.ToString("HH:mm:ss");
+                            status.Text = I18n.T("Driver OK · ")
+                                + fans.Count + (fans.Count == 1 ? I18n.T(" fan") : I18n.T(" fans"))
+                                + " · " + curatedLabels.Count + I18n.T(" sensors")
+                                + (hotKey != null ? I18n.T(" · hottest: ") + I18n.T(CuratedName(hotKey)) + " " + FormatTemp(hot) : "")
+                                + I18n.T(" · updated ") + DateTime.Now.ToString("HH:mm:ss");
                             PushHistory(hotKey == null ? double.NaN : hot,
                                         infos.Count > 0 ? infos[0].Actual : double.NaN,
                                         fans.Count > 0 ? fans[0].Max : 0);
                             // Lectura viva en la barra de título (visible en todas las páginas)
                             if (titleTemp != null && hotKey != null) {
                                 string rpmPart = (infos.Count > 0 && !double.IsNaN(infos[0].Actual))
-                                    ? "   ·   " + ((int)infos[0].Actual) + " RPM" : "";
+                                    ? I18n.T("   ·   ") + ((int)infos[0].Actual) + " RPM" : "";
                                 titleTemp.Text = FormatTemp(hot) + rpmPart;
                                 titleTemp.Foreground = TempBrush(hot);
                             }
@@ -2878,11 +2904,11 @@ namespace RPMac {
             var rows = new List<string[]>();
             foreach (var fi in infos)
                 if (!double.IsNaN(fi.Actual) && OverlaySel("fan" + fi.Index))
-                    rows.Add(new[] { "Fan " + fi.Index, ((int)fi.Actual) + " RPM" });
+                    rows.Add(new[] { I18n.T("Fan ") + fi.Index, ((int)fi.Actual) + " RPM" });
             foreach (var c in SENSORS) {
                 double v;
                 if (curatedLabels.ContainsKey(c[0]) && OverlaySel(c[0]) && curated.TryGetValue(c[0], out v) && !double.IsNaN(v))
-                    rows.Add(new[] { c[1], FormatTemp(v) });
+                    rows.Add(new[] { I18n.T(c[1]), FormatTemp(v) });
             }
             overlay.Update(rows);
         }
@@ -3035,6 +3061,7 @@ namespace RPMac {
         public static HashSet<string> OverlayItems = null; // null = mostrar todo
         public static string Theme = "dark";
         public static string TrayMode = "icon";  // "icon", "none", "highest", or a sensor key
+        public static string Language = "en";    // "en" or "it"
         // Suaviza la curva: ignora cambios pequeños y baja despacio, para que el ventilador
         // no persiga cada oscilación de un grado (que se oye como un subir/bajar constante).
         public static bool Smoothing = true;
@@ -3069,6 +3096,7 @@ namespace RPMac {
                     else if (s.Length >= 2 && s[0] == "ovsel") OverlayItems = new HashSet<string>(s[1].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
                     else if (s.Length >= 2 && s[0] == "theme") Theme = s[1];
                     else if (s.Length >= 2 && s[0] == "traymode") TrayMode = s[1];
+                    else if (s.Length >= 2 && s[0] == "lang") { string l = s[1]; if (l == "en" || l == "it") Language = l; }
                     else if (s.Length >= 2 && s[0] == "activepreset") ActivePreset = s[1];
                     else if (s.Length >= 2 && s[0] == "smooth") Smoothing = (s[1] == "1");
                     else if (s.Length >= 2 && s[0] == "guard") SafetyGuard = (s[1] == "1");
@@ -3119,6 +3147,7 @@ namespace RPMac {
                 if (OverlayItems != null) lines.Add("ovsel|" + string.Join(",", new List<string>(OverlayItems).ToArray()));
                 lines.Add("theme|" + Theme);
                 lines.Add("traymode|" + TrayMode);
+                lines.Add("lang|" + Language);
                 if (!string.IsNullOrEmpty(ActivePreset)) lines.Add("activepreset|" + ActivePreset.Replace("|", " "));
                 lines.Add("smooth|" + (Smoothing ? "1" : "0"));
                 lines.Add("guard|" + (SafetyGuard ? "1" : "0"));
@@ -3222,6 +3251,7 @@ namespace RPMac {
 
     public class App {
         static Mutex mutex;
+        internal const string RELAUNCH_ARG = "--relaunch";
 
         [STAThread]
         public static void Main() {
@@ -3231,8 +3261,16 @@ namespace RPMac {
             bool createdNew;
             mutex = new Mutex(true, "RPMac_singleton_v1", out createdNew);
             if (!createdNew) {
-                try { EventWaitHandle.OpenExisting("RPMac_show_v1").Set(); } catch { }
-                return;
+                // Relaunched by a language switch: the old instance is on its way out, so wait
+                // for it to let go of the SMC and the mutex rather than surfacing its window.
+                bool took = false;
+                if (Array.IndexOf(Environment.GetCommandLineArgs(), RELAUNCH_ARG) >= 0) {
+                    try { took = mutex.WaitOne(10000); } catch (AbandonedMutexException) { took = true; }
+                }
+                if (!took) {
+                    try { EventWaitHandle.OpenExisting("RPMac_show_v1").Set(); } catch { }
+                    return;
+                }
             }
             var showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, "RPMac_show_v1");
 
