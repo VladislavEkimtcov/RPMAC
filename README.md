@@ -70,7 +70,7 @@ Designed as a lightweight, modern alternative to paid tools, RPMac includes **ha
 - On-screen overlay (FRAPS-style): always-on-top, top-right corner, vertical or horizontal, with selectable fans/sensors
 - Live temperature on the tray icon (highest sensor or a specific one) — or just the app icon, or nothing
 - Themes: Dark / Light / Nature / Japan
-- **Interface languages**: English, Italian
+- **Interface languages**: English and Italian — pick one in Settings → Language
 - Temperatures in °C or °F
 - Start with Windows + start minimized to tray
 - Remembers your settings and re-applies them (including after sleep/resume)
@@ -109,13 +109,13 @@ To **uninstall**, just delete the folder. Settings live in `%APPDATA%\RPMac`; if
 ## Compatibility
 | Hardware | Status |
 |---|---|
-| Intel Macs (up to 2017) on Boot Camp | Should work (confirmed on MacPro6,1, MacPro3,1 and iMac17,1) |
+| Intel Macs (up to 2017) on Boot Camp | Should work (confirmed on MacPro6,1, MacPro3,1, iMac17,1, Macmini3,1, Macmini7,1 and MacBookPro13,2) |
 | Intel Macs with T2 (2018-2020) | **Requires PawnIO Unrestricted <=2.0.1 or >= 2.3.0** — the T2 uses a different SMC interface and needs PawnIO, but the driver has issues involving PawnIO 2.1.0 & 2.2.0 Unrestricted not actually disabling verification |
 | Apple Silicon (M1+) | Not possible (no Boot Camp) |
 | Non-Apple PCs | Read-only (writes are blocked) |
 
 ### Tested hardware
-RPMac has been verified on **five machines**:
+RPMac has been verified on **seven machines**:
 
 - **Mac Pro (Late 2013)** — model identifier `MacPro6,1`
   - Intel Xeon CPU, dual AMD FirePro GPUs, single centrifugal system fan
@@ -131,8 +131,14 @@ RPMac has been verified on **five machines**:
 - **MacBook Pro (16-inch, 2019)** - model identifier `MacBookPro16,1`
   - Intel Core i9-9880H, AMD Radeon Pro 5500M, dual fan — running **Windows Server 2025 single-booted**
   - All of the features pretty much work @matthewyang204
+- **Mac mini (Late 2014)** — model identifier `Macmini7,1`
+  - Intel Core i7-4578U, Intel Iris Graphics 5100, single fan — running **Windows 10 IoT Enterprise LTSC 2021**
+  - Everything tried worked, including a custom temperature curve. Reported by @heni0xyz
+- **MacBook Pro (13-inch, Late 2016, Touch Bar)** — model identifier `MacBookPro13,2`
+  - Intel Core i5-6267U, Intel Iris Graphics 550, two fans — running **Windows 10 Home**
+  - Everything worked as intended, with no errors; the first confirmed MacBook without a T2 chip. Reported by @MasterWolff
 
-On all five machines, reading sensors and controlling the fans (Auto / Max / custom RPM) work correctly.
+On all seven machines, reading sensors and controlling the fans (Auto / Max / custom RPM) work correctly.
 
 ### Other Intel Macs (untested, but expected to work)
 Beyond the machines above, RPMac has **not** been tested on other Mac models yet. That said, it is built on the **standard Apple SMC interface that is common to virtually all Intel Macs**, and the core auto-detects the number of fans and each key's data format. So it *should* work on most Intel Macs in Boot Camp, with these caveats:
@@ -144,7 +150,7 @@ Beyond the machines above, RPMac has **not** been tested on other Mac models yet
 
 ## Help us test it
 
-RPMac has only been verified on a couple of Macs, so **we would really appreciate your help confirming whether it works on yours** — whether it works *or not*. Every report helps build a reliable compatibility list.
+RPMac has only been verified on a handful of Macs, so **we would really appreciate your help confirming whether it works on yours** — whether it works *or not*. Every report helps build a reliable compatibility list.
 
 Please **open an issue** with:
 
@@ -157,6 +163,12 @@ Please **open an issue** with:
 - Any error messages or odd readings (a screenshot is great)
 
 Even a quick "works fine on my iMac 2017" is hugely valuable. Thank you!
+
+## Languages
+
+RPMac's interface is available in **English** and **Italian**. Switch in **Settings → Language**; RPMac restarts to apply it and remembers your choice. The Italian translation was contributed by @Michel-IT.
+
+Want RPMac in your language? Every translated string lives in one file, [`src/gui/I18n.cs`](src/gui/I18n.cs), keyed by the English text — add a dictionary for your language there and a button for it in the Settings selector. Anything left untranslated simply falls back to English. Pull requests are welcome.
 
 ## Scripting / command line
 
@@ -234,7 +246,7 @@ RPMac's SMC code is derived from the Linux `applesmc` driver and smcFanControl �
 
 RPMac is provided **"AS IS", without warranty of any kind**, express or implied, including but not limited to the warranties of merchantability and fitness for a particular purpose, as stated in the GNU GPL-2.0.
 
-- **There is no guarantee that it will work on your Mac.** It has only been tested on one model (see above).
+- **There is no guarantee that it will work on your Mac.** It has only been tested on the few models listed above.
 - **You use this software entirely at your own risk.**
 - The author and contributors are **not responsible or liable for any damage** of any kind — including but not limited to overheating, throttling, hardware failure, data loss, or any other problem — arising from the use or misuse of this software.
 
