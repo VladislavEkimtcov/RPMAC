@@ -434,6 +434,14 @@ namespace RPMac {
         public static string HardwareName = "";
         public static string SafetyReason = "Not validated yet.";
 
+        // Si merece la pena repetir Validate() estando en solo lectura. Solo cuando el registro
+        // dice que esto es un Mac: cada intento habla con los puertos 0x300/0x304, y en un PC
+        // que no es Apple esos puertos pueden ser de otro dispositivo. Ahi se prueba una vez
+        // al arrancar, como siempre. (Un Mac Pro 3,1 con el registro vacio tampoco reintenta:
+        // queda como antes, en solo lectura hasta reiniciar la app.)
+        public static volatile bool RevalidationAllowed = false;
+        const string RETRY_NOTE = " RPMac keeps checking every few seconds and unlocks by itself if the SMC starts answering.";
+
         // Valida que el hardware sea una Mac antes de permitir escribir. Si algo no
         // cuadra, deja la app en SOLO LECTURA (no escribe nada).
         //
@@ -463,6 +471,8 @@ namespace RPMac {
             // Señal secundaria: el registro a veces confirma "Apple"/"Mac", pero no siempre.
             bool registrySaysApple = mfg.IndexOf("Apple", StringComparison.OrdinalIgnoreCase) >= 0
                                   || prod.IndexOf("Mac", StringComparison.OrdinalIgnoreCase) >= 0;
+            RevalidationAllowed = registrySaysApple;
+            string retryNote = registrySaysApple ? RETRY_NOTE : "";
 
             // Prueba primaria y autoritativa: el SMC de Apple debe responder coherentemente.
             lock (gate) {
@@ -495,8 +505,7 @@ namespace RPMac {
                                    + (MmioError.Length > 0 ? "  [T2 module: " + MmioError + "]" : "");
                         else
                             t2hint = "";
-                        SafetyReason = "SMC did not return a valid fan count (got " + (double.IsNaN(n) ? "NaN" : n.ToString()) + "). Read-only for safety." + t2hint
-                                     + " RPMac keeps retrying and unlocks by itself once the SMC answers.";
+                        SafetyReason = "SMC did not return a valid fan count (got " + (double.IsNaN(n) ? "NaN" : n.ToString()) + "). Read-only for safety." + t2hint + retryNote;
                         return false;
                     }
                 }
@@ -505,8 +514,7 @@ namespace RPMac {
                 if (double.IsNaN(ac) || double.IsNaN(mn) || double.IsNaN(mx) ||
                     mn < 0 || mx <= 0 || mx > 20000 || ac < 0 || ac > 20000) {
                     WritesAllowed = false;
-                    SafetyReason = string.Format("Fan readings are not plausible (ac={0:0}, mn={1:0}, mx={2:0}). Read-only for safety.", ac, mn, mx)
-                                 + " RPMac keeps retrying and unlocks by itself once the SMC answers.";
+                    SafetyReason = string.Format("Fan readings are not plausible (ac={0:0}, mn={1:0}, mx={2:0}). Read-only for safety.", ac, mn, mx) + retryNote;
                     return false;
                 }
             }

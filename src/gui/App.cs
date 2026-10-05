@@ -2759,8 +2759,8 @@ namespace RPMac {
                         // Arrancamos en solo lectura porque el SMC no contestaba (otro programa lo
                         // dejo atascado, o aun estaba despertando): seguir sondeando en vez de
                         // quedarnos asi hasta reiniciar la app. Es la misma comprobacion de
-                        // seguridad de siempre; solo se repite.
-                        if (!Smc.WritesAllowed && !relaunching && sinceValidate.ElapsedMilliseconds >= REVALIDATE_MS) {
+                        // seguridad de siempre; solo se repite, y solo en un Mac (ver RevalidationAllowed).
+                        if (!Smc.WritesAllowed && Smc.RevalidationAllowed && !relaunching && sinceValidate.ElapsedMilliseconds >= REVALIDATE_MS) {
                             sinceValidate.Restart();
                             bool ok = false;
                             try { ok = Smc.Validate(); } catch (Exception ex) { App.LogError("Revalidate", ex); }
