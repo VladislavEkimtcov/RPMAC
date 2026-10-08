@@ -233,6 +233,8 @@ namespace RPMac {
         TextBox presetNameBox;      // name field for saving the current config
         TextBlock presetPlaceholder; // faux placeholder for the name field
         string activePreset;        // name of the preset currently applied (null = none / custom)
+        ComboBox startupPresetCombo; // "Apply on startup" dropdown (None + every preset)
+        bool fillingStartupCombo;   // true while repopulating it, so SelectionChanged doesn't save
         System.Windows.Forms.ToolStripMenuItem trayPresetsItem;  // tray "Presets" submenu
         volatile bool running = true;
         const double BAR_W = 404;
@@ -308,7 +310,7 @@ namespace RPMac {
                 // Each step is isolated so one failure can't take down startup or hide the
                 // window, and the log tells us exactly which step failed.
                 try { SetupTray(); }    catch (Exception ex) { App.LogError("SetupTray", ex); }
-                try { ApplySaved(); }   catch (Exception ex) { App.LogError("ApplySaved", ex); }
+                try { ApplyStartup(); } catch (Exception ex) { App.LogError("ApplyStartup", ex); }
                 try { StartRefresh(); } catch (Exception ex) { App.LogError("StartRefresh", ex); }
                 try { Microsoft.Win32.SystemEvents.PowerModeChanged += OnPowerChange; } catch (Exception ex) { App.LogError("PowerHook", ex); }
                 try { if (Settings.Overlay) ShowOverlay(); } catch (Exception ex) { App.LogError("Overlay", ex); }
@@ -1004,6 +1006,14 @@ namespace RPMac {
             }
         }
 
+        // At launch: apply the chosen startup preset, or (None) restore the last-used state.
+        void ApplyStartup() {
+            if (!Smc.WritesAllowed) return;
+            string p = Settings.StartupPreset;
+            if (p != null && Settings.Presets.ContainsKey(p)) ApplyPreset(p);
+            else ApplySaved();
+        }
+
         // Aplica al abrir la última configuración guardada (si es seguro escribir)
         void ApplySaved() {
             if (!Smc.WritesAllowed) return;
@@ -1087,10 +1097,47 @@ namespace RPMac {
             saveWrap.Child = saveCol;
             col.Children.Add(saveWrap);
 
-            if (!Smc.WritesAllowed) { presetNameBox.IsEnabled = false; saveBtn.Opacity = 0.45; saveWrap.Opacity = 0.6; }
+            // ---- "Apply on startup" dropdown ----
+            var rowStart = new DockPanel { LastChildFill = true, Margin = new Thickness(0, 14, 0, 0) };
+            var labelsStart = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            labelsStart.Children.Add(new TextBlock { Text = "Apply on startup", Foreground = TXT, FontSize = 13, FontWeight = FontWeights.SemiBold });
+            labelsStart.Children.Add(new TextBlock { Text = "Preset applied when RPMac launches. None restores the last-used settings.", Foreground = SUB, FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 10, 0) });
+            startupPresetCombo = new ComboBox { Width = 150, VerticalAlignment = VerticalAlignment.Center };
+            startupPresetCombo.SelectionChanged += delegate {
+                if (fillingStartupCombo) return;
+                var sel = startupPresetCombo.SelectedItem as ComboBoxItem;
+                if (sel == null) return;
+                Settings.StartupPreset = sel.Tag as string;
+                Settings.Save();
+                status.Text = "Apply on startup: " + (Settings.StartupPreset ?? "None");
+            };
+            DockPanel.SetDock(startupPresetCombo, Dock.Right);
+            rowStart.Children.Add(startupPresetCombo);
+            rowStart.Children.Add(labelsStart);
+            col.Children.Add(rowStart);
+
+            if (!Smc.WritesAllowed) { presetNameBox.IsEnabled = false; saveBtn.Opacity = 0.45; saveWrap.Opacity = 0.6; startupPresetCombo.IsEnabled = false; rowStart.Opacity = 0.6; }
 
             parent.Children.Add(Card(col));
             RebuildPresetChips();
+            RebuildStartupPresetCombo();
+        }
+
+        // Refill the "Apply on startup" dropdown (None + every preset) and select the saved choice.
+        void RebuildStartupPresetCombo() {
+            if (startupPresetCombo == null) return;
+            fillingStartupCombo = true;
+            try {
+                startupPresetCombo.Items.Clear();
+                var none = new ComboBoxItem { Content = "None", Tag = null };
+                startupPresetCombo.Items.Add(none);
+                startupPresetCombo.SelectedItem = none;
+                foreach (var name in Settings.Presets.Keys) {
+                    var it = new ComboBoxItem { Content = name, Tag = name };
+                    startupPresetCombo.Items.Add(it);
+                    if (name == Settings.StartupPreset) startupPresetCombo.SelectedItem = it;
+                }
+            } finally { fillingStartupCombo = false; }
         }
 
         void RebuildPresetChips() {
@@ -1199,6 +1246,7 @@ namespace RPMac {
             presetNameBox.Text = "";
             activePreset = name;              // the just-saved config is now the active preset
             RebuildPresetChips();
+            RebuildStartupPresetCombo();
             UpdateTrayPresets();
             status.Text = "Saved preset: " + name;
         }
@@ -1206,8 +1254,10 @@ namespace RPMac {
         void DeletePreset(string name) {
             if (Settings.Presets.Remove(name)) {
                 if (activePreset == name) activePreset = null;
+                if (Settings.StartupPreset == name) Settings.StartupPreset = null;   // fall back to None
                 Settings.Save();
                 RebuildPresetChips();
+                RebuildStartupPresetCombo();
                 UpdateTrayPresets();
                 status.Text = "Deleted preset: " + name;
             }
@@ -1483,6 +1533,7 @@ namespace RPMac {
         public static HashSet<string> OverlayItems = null; // null = mostrar todo
         public static string Theme = "dark";
         public static string TrayMode = "icon";  // "icon", "none", "highest", or a sensor key
+        public static string StartupPreset = null; // preset applied at launch (null = none: restore last state)
 
         public static void Load() {
             try {
@@ -1496,6 +1547,7 @@ namespace RPMac {
                     else if (s.Length >= 2 && s[0] == "ovsel") OverlayItems = new HashSet<string>(s[1].Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
                     else if (s.Length >= 2 && s[0] == "theme") Theme = s[1];
                     else if (s.Length >= 2 && s[0] == "traymode") TrayMode = s[1];
+                    else if (s.Length >= 2 && s[0] == "startpreset") StartupPreset = (s[1] == "") ? null : s[1];
                     else if (s.Length >= 4 && s[0] == "fan") {
                         int idx;
                         if (int.TryParse(s[1], out idx)) {
@@ -1531,6 +1583,7 @@ namespace RPMac {
                 if (OverlayItems != null) lines.Add("ovsel|" + string.Join(",", new List<string>(OverlayItems).ToArray()));
                 lines.Add("theme|" + Theme);
                 lines.Add("traymode|" + TrayMode);
+                if (StartupPreset != null) lines.Add("startpreset|" + StartupPreset);
                 foreach (var kv in Fans) lines.Add("fan|" + kv.Key + "|" + string.Join("|", kv.Value));
                 foreach (var p in Presets)
                     foreach (var kv in p.Value)

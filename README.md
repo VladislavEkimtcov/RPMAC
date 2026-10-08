@@ -42,7 +42,7 @@ Designed as a lightweight, modern alternative to paid tools, RPMac includes **ha
 - Real-time fan RPM and temperature monitoring
 - Per-fan control: Auto / Max / custom RPM / **temperature curve**
 - **Per-fan temperature curve** — pick a sensor and ramp RPM between a min and max temperature
-- **Presets** — save your fan setup as named profiles (e.g. Silent, Gaming) and switch with one click, from the app or the tray icon
+- **Presets** — save your fan setup as named profiles (e.g. Silent, Gaming) and switch with one click, from the app or the tray icon; optionally pick one to apply automatically on startup
 - **Tray temperature display** — show a live temperature reading right on the taskbar tray icon instead of the app icon
 - Command-line tool (`smccore.exe`) for scripting fan control
 - Curated, friendly temperature sensors (plus a raw view of every key)
